@@ -1,5 +1,5 @@
 import React from "react";
-import { FiPackage } from "react-icons/fi";
+import { FiHome } from "react-icons/fi";
 import { FaPlus } from "react-icons/fa";
 
 function Header() {
@@ -9,7 +9,7 @@ function Header() {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center">
             <div className="flex items-center justify-center h-8 w-8 rounded-[9px] bg-accent-lime-500">
-              <FiPackage className="h-6 w-6" />
+              <FiHome className="h-6 w-6" />
             </div>
 
             <div className="flex flex-col ml-2 text-white">
