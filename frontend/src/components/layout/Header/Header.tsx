@@ -1,8 +1,21 @@
 import React from "react";
 import { FiHome } from "react-icons/fi";
 import { FaPlus } from "react-icons/fa";
+import type { Produto } from "../../../types/product";
 
-function Header() {
+interface HeaderProps {
+  produtos: Produto[];
+}
+
+function Header({ produtos }: HeaderProps) {
+  const totalProdutos = produtos.length;
+
+  const estoqueBaixo = produtos.filter(
+    (produto) => produto.quantidadeAtual > 0 && produto.quantidadeAtual <= produto.quantidadeMinima
+  ).length;
+
+  const esgotados = produtos.filter((produto) => produto.quantidadeAtual === 0).length;
+
   return (
     <header>
       <div className="flex flex-col rounded-b-3xl bg-brand-900 px-3 py-2 pb-8">
@@ -30,19 +43,25 @@ function Header() {
         </div>
 
         <section className="flex h-18 justify-between gap-2 font-bold text-white uppercase">
+          {/* PRODUTOS */}
           <div className="flex flex-1 flex-col items-start justify-center rounded-2xl bg-brand-500">
-            <span className="ml-2 text-[25px]">12</span>
-            <span className="ml-3 text-[12px]">Produtos</span>
+            <span className="ml-2 text-[25px]">{totalProdutos}</span>
+
+            <span className="ml-3 text-[10px]">Produtos</span>
           </div>
 
+          {/* ESTOQUE BAIXO */}
           <div className="flex flex-1 flex-col items-start justify-center rounded-2xl bg-warning-400 text-black">
-            <span className="ml-3 text-[25px]">3</span>
-            <span className="ml-3 text-[12px]">Estoque baixo</span>
+            <span className="ml-3 text-[25px]">{estoqueBaixo}</span>
+
+            <span className="ml-3 text-[10px]">Estoque baixo</span>
           </div>
 
+          {/* ESGOTADOS */}
           <div className="flex flex-1 flex-col items-start justify-center rounded-2xl bg-danger-400">
-            <span className="ml-3 text-[25px]">3</span>
-            <span className="ml-3 text-[12px]">Vence/Esgotou</span>
+            <span className="ml-3 text-[25px]">{esgotados}</span>
+
+            <span className="ml-3 text-[10px]">Vence/Esgotou</span>
           </div>
         </section>
       </div>

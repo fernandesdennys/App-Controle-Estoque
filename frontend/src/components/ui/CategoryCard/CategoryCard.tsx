@@ -22,15 +22,18 @@ function CategoryCard({ categoria }: CategoryCardProps) {
   const cor = coresCategorias[categoria.nome] ?? "bg-gray-500";
 
   return (
-    <div className="flex-1 rounded-2xl bg-white p-3">
-      {/* Nome da categoria e quantidade de produtos */}
-      <div className="flex items-center justify-between">
-        <p className="text-[13px] font-bold text-ink-900">{categoria.nome}</p>
+    <div
+      className="shrink-0 rounded-2xl bg-white p-3"
+      style={{
+        width: "calc((100% - 8px) / 2)",
+      }}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <p className="truncate text-[13px] font-bold text-ink-900">{categoria.nome}</p>
 
-        <span className="text-ink-500 text-[12px]">{categoria.quantidade}</span>
+        <span className="text-ink-500 shrink-0 text-[12px]">{categoria.quantidade}</span>
       </div>
 
-      {/* Barra de preenchimento do estoque */}
       <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-200">
         <div
           className={`h-full rounded-full ${cor}`}

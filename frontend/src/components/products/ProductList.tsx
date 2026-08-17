@@ -1,15 +1,29 @@
 import React from "react";
 import type { Produto } from "../../types/product";
 import ProductCard from "./ProductCard";
-import { TipoMovimentacao } from "../../types/movement";
 
 interface ProductListProps {
   produtos: Produto[];
+
+  onAlterarQuantidade: (
+    produto: Produto,
+    tipo: "ENTRADA" | "SAIDA"
+  ) => void;
+
+  salvandoId: number | null;
 }
 
-function ProductList({ produtos }: ProductListProps) {
+function ProductList({
+  produtos,
+  onAlterarQuantidade,
+  salvandoId,
+}: ProductListProps) {
   if (produtos.length === 0) {
-    return <div className="text-ink-500 rounded-2xl bg-white p-4 text-center text-sm">Nenhum produto encontrado.</div>;
+    return (
+      <div className="rounded-2xl bg-white p-4 text-center text-sm text-ink-500">
+        Nenhum produto encontrado.
+      </div>
+    );
   }
 
   return (
@@ -18,9 +32,8 @@ function ProductList({ produtos }: ProductListProps) {
         <ProductCard
           key={produto.id}
           produto={produto}
-          onMovimentacao={function (produto: Produto, tipo: TipoMovimentacao): void {
-            throw new Error("Function not implemented.");
-          }}
+          onAlterarQuantidade={onAlterarQuantidade}
+          salvando={salvandoId === produto.id}
         />
       ))}
     </div>

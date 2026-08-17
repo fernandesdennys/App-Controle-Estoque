@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from "react";
 import BottomNavigation from "../../components/layout/Footer/BottomNavigation";
 import Header from "../../components/layout/Header/Header";
-import { FaPlus } from "react-icons/fa";
-import { FaBars } from "react-icons/fa";
+import { FaPlus, FaBars } from "react-icons/fa";
 import CategoryCard from "../../components/ui/CategoryCard/CategoryCard";
+import type { Produto } from "../../types/product";
 
-// Service responsável por buscar os dados no backend
+import { getProdutos } from "../../services/productService";
 import { getCategoriasResumo } from "../../services/categoryService";
 
-// Tipo dos dados que serão exibidos nos cards
 import type { CategoriaResumo } from "../../types/category";
 
 function Dashboard() {
@@ -25,141 +24,101 @@ function Dashboard() {
   const dataFormatada = `${dias[dataAtual.getDay()]}, ${dataAtual.getDate()} ${meses[dataAtual.getMonth()]}`;
 
   // ============================================================
+  // PRODUTOS
+  // ============================================================
+
+  const [produtos, setProdutos] = useState<Produto[]>([]);
+  const [carregandoProdutos, setCarregandoProdutos] = useState(true);
+  const [erroProdutos, setErroProdutos] = useState<string | null>(null);
+
+  // ============================================================
   // CATEGORIAS
   // ============================================================
 
-  /**
-   * Guarda as categorias que serão exibidas na seção
-   * "Por categoria".
-   *
-   * Inicialmente começa como um array vazio porque
-   * os dados ainda não vieram do backend.
-   */
   const [categorias, setCategorias] = useState<CategoriaResumo[]>([]);
-
-  /**
-   * Indica se estamos esperando a resposta do backend.
-   */
   const [carregandoCategorias, setCarregandoCategorias] = useState(true);
-
-  /**
-   * Guarda uma eventual mensagem de erro.
-   */
   const [erroCategorias, setErroCategorias] = useState<string | null>(null);
 
   // ============================================================
-  // BUSCAR CATEGORIAS NO BACKEND
+  // BUSCAR PRODUTOS
   // ============================================================
 
   useEffect(() => {
-    /**
-     * Função responsável por carregar os dados.
-     */
+    async function carregarProdutos() {
+      try {
+        setCarregandoProdutos(true);
+        setErroProdutos(null);
+
+        const dados = await getProdutos();
+
+        setProdutos(dados);
+      } catch (error) {
+        const mensagem = error instanceof Error ? error.message : "Não foi possível carregar os produtos.";
+
+        setErroProdutos(mensagem);
+      } finally {
+        setCarregandoProdutos(false);
+      }
+    }
+
+    carregarProdutos();
+  }, []);
+
+  // ============================================================
+  // BUSCAR CATEGORIAS
+  // ============================================================
+
+  useEffect(() => {
     async function carregarCategorias() {
       try {
-        // Começamos o carregamento
         setCarregandoCategorias(true);
-
-        // Limpamos um possível erro anterior
         setErroCategorias(null);
 
-        /**
-         * Aqui acontece a chamada:
-         *
-         * GET /categorias
-         *
-         * +
-         *
-         * GET /produtos?abaixo_minimo=true
-         *
-         * O categoryService junta essas informações
-         * e devolve os dados já preparados para o card.
-         */
         const dados = await getCategoriasResumo();
 
-        /**
-         * Colocamos os dados recebidos dentro do estado.
-         *
-         * Isso fará o React renderizar novamente o componente.
-         */
         setCategorias(dados);
       } catch (error) {
-        /**
-         * Se ocorrer algum problema na requisição,
-         * mostramos uma mensagem amigável.
-         */
         const mensagem = error instanceof Error ? error.message : "Não foi possível carregar as categorias.";
 
         setErroCategorias(mensagem);
       } finally {
-        /**
-         * Independentemente de dar certo ou errado,
-         * terminamos o estado de carregamento.
-         */
         setCarregandoCategorias(false);
       }
     }
 
-    /**
-     * Executa a função quando o Dashboard é carregado.
-     */
     carregarCategorias();
   }, []);
 
   // ============================================================
-  // ESTILOS DOS STATUS
+  // PRODUTOS QUE PRECISAM DE ATENÇÃO
+  // ============================================================
+
+  const produtosAtencao = produtos.filter(
+    (produto) =>
+      produto.quantidadeAtual === 0 ||
+      (produto.quantidadeAtual > 0 && produto.quantidadeAtual <= produto.quantidadeMinima)
+  );
+
+  // ============================================================
+  // STATUS
   // ============================================================
 
   const statusStyles = {
     BAIXO: "text-warning-500 bg-warning-100",
     ESGOTADO: "text-danger-500 bg-danger-100",
-    "VENCE EM 4D": "text-danger-500 bg-danger-100",
   };
 
-  // ============================================================
-  // PRODUTOS DE ATENÇÃO
-  // ============================================================
+  function obterStatus(produto: Produto) {
+    if (produto.quantidadeAtual === 0) {
+      return "ESGOTADO";
+    }
 
-  /**
-   * Por enquanto essa lista continua fixa.
-   *
-   * Depois podemos conectar essa parte ao mesmo endpoint
-   * /produtos?abaixo_minimo=true.
-   */
-  const alertProducts = [
-    {
-      id: 1,
-      initials: "ME",
-      name: "Arroz branco 5kg",
-      category: "Mercearia",
-      expiration: "vence em 20 dias",
-      status: "BAIXO",
-    },
-    {
-      id: 2,
-      initials: "BE",
-      name: "Leite integral",
-      category: "Bebidas",
-      expiration: "vence em 4 dias",
-      status: "VENCE EM 4D",
-    },
-    {
-      id: 3,
-      initials: "LI",
-      name: "Detergente neutro",
-      category: "Limpeza",
-      expiration: "vence em 400 dias",
-      status: "ESGOTADO",
-    },
-    {
-      id: 4,
-      initials: "BE",
-      name: "Iogurte natural",
-      category: "Bebidas",
-      expiration: "vence em 2 dias",
-      status: "BAIXO",
-    },
-  ];
+    if (produto.quantidadeAtual <= produto.quantidadeMinima) {
+      return "BAIXO";
+    }
+
+    return "NORMAL";
+  }
 
   // ============================================================
   // RENDERIZAÇÃO
@@ -167,12 +126,12 @@ function Dashboard() {
 
   return (
     <div id="dashboard" className="flex min-h-screen flex-col">
-      <main id="dashboard-main" className="flex-1 bg-linear-to-b from-brand-100 to-brand-50">
+      <main id="dashboard-main" className="flex-1 bg-linear-to-b from-brand-100 to-brand-50 pb-24">
         <span id="dashboard-breadcrumb" className="pb-1 font-bold text-brand-900">
           1. Início
         </span>
 
-        <Header />
+        <Header produtos={produtos} />
 
         {/* =====================================================
             SAUDAÇÃO
@@ -189,7 +148,7 @@ function Dashboard() {
         </div>
 
         {/* =====================================================
-            TÍTULO - PRECISA DE ATENÇÃO
+            PRECISA DE ATENÇÃO
         ====================================================== */}
 
         <div className="mx-5 flex justify-between pb-3">
@@ -204,7 +163,7 @@ function Dashboard() {
               id="attention-count"
               className="flex w-15 justify-center rounded-2xl bg-danger-100 px-1 text-[14px] font-bold text-danger-400"
             >
-              4 itens
+              {produtosAtencao.length} {produtosAtencao.length === 1 ? "item" : "itens"}
             </p>
           </div>
         </div>
@@ -215,40 +174,59 @@ function Dashboard() {
 
         <div id="attention-section" className="mx-5">
           <div id="attention-product-list" className="rounded-2xl bg-white p-3 shadow-sm">
-            {alertProducts.map((product) => (
-              <div
-                id={`attention-product-${product.id}`}
-                key={product.id}
-                className="grid grid-cols-[40px_1fr_auto] items-center gap-3 py-2 first:pt-0 last:pb-0"
-              >
-                {/* Ícone */}
-                <div
-                  id={`product-icon-${product.id}`}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 text-xs font-bold text-purple-700"
-                >
-                  {product.initials}
-                </div>
+            {carregandoProdutos && <p className="text-ink-500 py-2 text-center text-sm">Carregando estoque...</p>}
 
-                {/* Informações do produto */}
-                <div id={`product-info-${product.id}`}>
-                  <h2 className="text-[14px] leading-tight font-bold">{product.name}</h2>
+            {!carregandoProdutos && erroProdutos && (
+              <p className="py-2 text-center text-sm text-danger-500">{erroProdutos}</p>
+            )}
 
-                  <p className="text-[10px] text-gray-500">
-                    {product.category} · {product.expiration}
-                  </p>
-                </div>
+            {!carregandoProdutos && !erroProdutos && produtosAtencao.length === 0 && (
+              <p className="text-ink-500 py-2 text-center text-sm">Nenhum produto precisa de atenção.</p>
+            )}
 
-                {/* Status */}
-                <div
-                  id={`product-status-${product.id}`}
-                  className={`rounded-2xl px-3 py-1 text-xs font-bold whitespace-nowrap ${
-                    statusStyles[product.status as keyof typeof statusStyles]
-                  }`}
-                >
-                  {product.status}
-                </div>
-              </div>
-            ))}
+            {!carregandoProdutos &&
+              !erroProdutos &&
+              produtosAtencao.map((produto) => {
+                const status = obterStatus(produto);
+
+                return (
+                  <div
+                    id={`attention-product-${produto.id}`}
+                    key={produto.id}
+                    className="grid grid-cols-[40px_1fr_auto] items-center gap-3 py-2 first:pt-0 last:pb-0"
+                  >
+                    {/* ÍCONE */}
+
+                    <div
+                      id={`product-icon-${produto.id}`}
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 text-xs font-bold text-purple-700"
+                    >
+                      {produto.nome.substring(0, 2).toUpperCase()}
+                    </div>
+
+                    {/* INFORMAÇÕES */}
+
+                    <div id={`product-info-${produto.id}`}>
+                      <h2 className="text-[14px] leading-tight font-bold">{produto.nome}</h2>
+
+                      <p className="text-[10px] text-gray-500">
+                        Estoque: {produto.quantidadeAtual} {produto.unidade} · mín: {produto.quantidadeMinima}
+                      </p>
+                    </div>
+
+                    {/* STATUS */}
+
+                    <div
+                      id={`product-status-${produto.id}`}
+                      className={`rounded-2xl px-3 py-1 text-xs font-bold whitespace-nowrap ${
+                        statusStyles[status as keyof typeof statusStyles]
+                      }`}
+                    >
+                      {status}
+                    </div>
+                  </div>
+                );
+              })}
           </div>
         </div>
 
@@ -277,7 +255,8 @@ function Dashboard() {
             <FaPlus />
 
             <p className="text-left leading-tight">
-              Nova entrada <br />
+              Nova entrada
+              <br />
               no estoque
             </p>
           </button>
@@ -289,7 +268,9 @@ function Dashboard() {
             <FaBars />
 
             <p className="text-left leading-tight">
-              Registrar <br /> consumo
+              Registrar
+              <br />
+              consumo
             </p>
           </button>
         </div>
@@ -301,34 +282,32 @@ function Dashboard() {
         <div className="font-bold text-ink-900">
           <h1 className="mx-3">Por categoria</h1>
 
-          <div className="mx-2 my-4 flex gap-2">
-            {/* -------------------------------------------------
-                CARREGANDO
-            -------------------------------------------------- */}
+          {/* =================================================
+              CONTAINER COM ROLAGEM HORIZONTAL
+          ================================================== */}
 
-            {carregandoCategorias && <p className="text-ink-500 text-sm">Carregando categorias...</p>}
+          <div className="mx-2 my-4 overflow-x-auto pb-3">
+  <div className="flex gap-2">
+              {/* CARREGANDO */}
 
-            {/* -------------------------------------------------
-                ERRO
-            -------------------------------------------------- */}
+              {carregandoCategorias && <p className="text-ink-500 text-sm">Carregando categorias...</p>}
 
-            {!carregandoCategorias && erroCategorias && <p className="text-sm text-danger-500">{erroCategorias}</p>}
+              {/* ERRO */}
 
-            {/* -------------------------------------------------
-                NENHUMA CATEGORIA
-            -------------------------------------------------- */}
+              {!carregandoCategorias && erroCategorias && <p className="text-sm text-danger-500">{erroCategorias}</p>}
 
-            {!carregandoCategorias && !erroCategorias && categorias.length === 0 && (
-              <p className="text-ink-500 text-sm">Nenhuma categoria precisa de atenção.</p>
-            )}
+              {/* NENHUMA CATEGORIA */}
 
-            {/* -------------------------------------------------
-                CATEGORIAS VINDAS DO BACKEND
-            -------------------------------------------------- */}
+              {!carregandoCategorias && !erroCategorias && categorias.length === 0 && (
+                <p className="text-ink-500 text-sm">Nenhuma categoria precisa de atenção.</p>
+              )}
 
-            {!carregandoCategorias &&
-              !erroCategorias &&
-              categorias.map((categoria) => <CategoryCard key={categoria.id} categoria={categoria} />)}
+              {/* CATEGORIAS */}
+
+              {!carregandoCategorias &&
+                !erroCategorias &&
+                categorias.map((categoria) => <CategoryCard key={categoria.id} categoria={categoria} />)}
+            </div>
           </div>
         </div>
       </main>
