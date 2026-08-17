@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import Sidebar from "../../components/layout/Sidebar/Sidebar";
+import BottomNavigation from "../../components/layout/Footer/BottomNavigation";
 import Header from "../../components/layout/Header/Header";
 import { FaPlus } from "react-icons/fa";
 import { FaBars } from "react-icons/fa";
@@ -299,7 +299,7 @@ function Dashboard() {
         ====================================================== */}
 
         <div className="font-bold text-ink-900">
-          <h1>Por categoria</h1>
+          <h1 className="mx-3">Por categoria</h1>
 
           <div className="mx-2 my-4 flex gap-2">
             {/* -------------------------------------------------
@@ -333,7 +333,7 @@ function Dashboard() {
         </div>
       </main>
 
-      <Sidebar />
+      <BottomNavigation />
     </div>
   );
 }

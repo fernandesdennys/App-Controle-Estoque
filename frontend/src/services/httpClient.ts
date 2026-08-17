@@ -20,9 +20,7 @@ httpClient.interceptors.response.use(
 
   // Se houve erro, tenta pegar a mensagem enviada pelo backend.
   (error) => {
-    const mensagem =
-      error.response?.data?.detail ??
-      "Não foi possível concluir a operação.";
+    const mensagem = error.response?.data?.detail ?? "Não foi possível concluir a operação.";
 
     return Promise.reject(new Error(mensagem));
   }

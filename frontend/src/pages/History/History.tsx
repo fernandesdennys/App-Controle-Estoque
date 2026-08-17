@@ -1,12 +1,12 @@
 import React from "react";
 import Header from "../../components/layout/Header/Header";
-import Sidebar from "../../components/layout/Sidebar/Sidebar";
+import Sidebar from "../../components/layout/Footer/BottomNavigation";
 
 function Pantry() {
   return (
     <div className="flex min-h-screen flex-col">
-      <main className="from-brand-200 to-brand-100 flex-1 bg-linear-to-b">
-        <span className="text-brand-900 pb-1 font-bold">4. Histórico</span>
+      <main className="flex-1 bg-linear-to-b from-brand-200 to-brand-100">
+        <span className="pb-1 font-bold text-brand-900">4. Histórico</span>
         <Header />
       </main>
       <Sidebar />

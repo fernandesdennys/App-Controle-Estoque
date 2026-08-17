@@ -1,8 +1,5 @@
 import { httpClient } from "./httpClient";
-import type {
-  Categoria,
-  CategoriaResumo,
-} from "../types/category";
+import type { Categoria, CategoriaResumo } from "../types/category";
 
 /**
  * Busca todas as categorias cadastradas no backend.
@@ -91,19 +88,14 @@ export async function getCategoriasResumo(): Promise<CategoriaResumo[]> {
   //
   // porque não precisamos esperar uma terminar
   // para começar a outra.
-  const [categorias, produtos] = await Promise.all([
-    getCategorias(),
-    getProdutosAbaixoDoMinimo(),
-  ]);
+  const [categorias, produtos] = await Promise.all([getCategorias(), getProdutosAbaixoDoMinimo()]);
 
   /**
    * Vamos manter somente as categorias que possuem
    * pelo menos um produto abaixo do mínimo.
    */
   const categoriasComAtencao = categorias.filter((categoria) =>
-    produtos.some(
-      (produto) => produto.categoriaId === categoria.id
-    )
+    produtos.some((produto) => produto.categoriaId === categoria.id)
   );
 
   /**
@@ -112,9 +104,7 @@ export async function getCategoriasResumo(): Promise<CategoriaResumo[]> {
    */
   return categoriasComAtencao.map((categoria) => {
     // Produtos de atenção pertencentes a esta categoria.
-    const produtosDaCategoria = produtos.filter(
-      (produto) => produto.categoriaId === categoria.id
-    );
+    const produtosDaCategoria = produtos.filter((produto) => produto.categoriaId === categoria.id);
 
     /**
      * Número exibido no card.
@@ -149,21 +139,13 @@ export async function getCategoriasResumo(): Promise<CategoriaResumo[]> {
         return 0;
       }
 
-      return Math.min(
-        (produto.quantidadeAtual /
-          produto.quantidadeIdeal) *
-          100,
-        100
-      );
+      return Math.min((produto.quantidadeAtual / produto.quantidadeIdeal) * 100, 100);
     });
 
     /**
      * Soma os percentuais.
      */
-    const somaPercentuais = percentuais.reduce(
-      (total, percentual) => total + percentual,
-      0
-    );
+    const somaPercentuais = percentuais.reduce((total, percentual) => total + percentual, 0);
 
     /**
      * Calcula a média.
@@ -171,10 +153,7 @@ export async function getCategoriasResumo(): Promise<CategoriaResumo[]> {
      * Como sabemos que existe pelo menos um produto
      * nesta categoria, quantidade será maior que zero.
      */
-    const porcentagem =
-      quantidade > 0
-        ? somaPercentuais / quantidade
-        : 0;
+    const porcentagem = quantidade > 0 ? somaPercentuais / quantidade : 0;
 
     return {
       id: categoria.id,
