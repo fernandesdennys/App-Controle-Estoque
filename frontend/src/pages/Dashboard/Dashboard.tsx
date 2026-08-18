@@ -1,14 +1,19 @@
 import React, { useEffect, useState } from "react";
 import BottomNavigation from "../../components/layout/Footer/BottomNavigation";
 import Header from "../../components/layout/Header/Header";
-import { FaPlus, FaBars } from "react-icons/fa";
+import { FaPlus, FaBars, FaTimes } from "react-icons/fa";
 import CategoryCard from "../../components/ui/CategoryCard/CategoryCard";
+
 import type { Produto } from "../../types/product";
-
-import { getProdutos } from "../../services/productService";
-import { getCategoriasResumo } from "../../services/categoryService";
-
 import type { CategoriaResumo } from "../../types/category";
+
+import {
+  getProdutos,
+  getProdutosDisponiveis,
+} from "../../services/productService";
+
+import { getCategoriasResumo } from "../../services/categoryService";
+import { registrarEntrada } from "../../services/movementService";
 
 function Dashboard() {
   // ============================================================
@@ -19,17 +24,59 @@ function Dashboard() {
 
   const dias = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
-  const meses = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+  const meses = [
+    "jan",
+    "fev",
+    "mar",
+    "abr",
+    "mai",
+    "jun",
+    "jul",
+    "ago",
+    "set",
+    "out",
+    "nov",
+    "dez",
+  ];
 
-  const dataFormatada = `${dias[dataAtual.getDay()]}, ${dataAtual.getDate()} ${meses[dataAtual.getMonth()]}`;
+  const dataFormatada = `${dias[dataAtual.getDay()]}, ${dataAtual.getDate()} ${
+    meses[dataAtual.getMonth()]
+  }`;
 
   // ============================================================
-  // PRODUTOS
+  // PRODUTOS DO ESTOQUE
   // ============================================================
 
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [carregandoProdutos, setCarregandoProdutos] = useState(true);
   const [erroProdutos, setErroProdutos] = useState<string | null>(null);
+
+  /*
+   * Essa lista representa os produtos que estão sendo
+   * utilizados para exibir informações do estoque.
+   */
+  const produtosEmEstoque = produtos.filter(
+    (produto) => produto.quantidadeAtual > 0,
+  );
+
+  // ============================================================
+  // PRODUTOS DISPONÍVEIS PARA NOVA ENTRADA
+  // ============================================================
+
+  /*
+   * Essa é uma lista separada da lista do estoque.
+   *
+   * Aqui devem ficar TODOS os produtos cadastrados,
+   * mesmo aqueles que ainda possuem quantidade 0.
+   *
+   * Ela será utilizada somente no modal "Nova entrada".
+   */
+  const [produtosDisponiveis, setProdutosDisponiveis] = useState<Produto[]>([]);
+  const [carregandoProdutosDisponiveis, setCarregandoProdutosDisponiveis] =
+    useState(true);
+  const [erroProdutosDisponiveis, setErroProdutosDisponiveis] = useState<
+    string | null
+  >(null);
 
   // ============================================================
   // CATEGORIAS
@@ -40,7 +87,19 @@ function Dashboard() {
   const [erroCategorias, setErroCategorias] = useState<string | null>(null);
 
   // ============================================================
-  // BUSCAR PRODUTOS
+  // MODAL - NOVA ENTRADA
+  // ============================================================
+
+  const [modalEntradaAberto, setModalEntradaAberto] = useState(false);
+  const [produtoSelecionadoId, setProdutoSelecionadoId] = useState<
+    number | null
+  >(null);
+  const [quantidadeEntrada, setQuantidadeEntrada] = useState("");
+  const [salvandoEntrada, setSalvandoEntrada] = useState(false);
+  const [erroEntrada, setErroEntrada] = useState("");
+
+  // ============================================================
+  // BUSCAR PRODUTOS DO ESTOQUE
   // ============================================================
 
   useEffect(() => {
@@ -53,7 +112,10 @@ function Dashboard() {
 
         setProdutos(dados);
       } catch (error) {
-        const mensagem = error instanceof Error ? error.message : "Não foi possível carregar os produtos.";
+        const mensagem =
+          error instanceof Error
+            ? error.message
+            : "Não foi possível carregar os produtos.";
 
         setErroProdutos(mensagem);
       } finally {
@@ -62,6 +124,34 @@ function Dashboard() {
     }
 
     carregarProdutos();
+  }, []);
+
+  // ============================================================
+  // BUSCAR PRODUTOS DISPONÍVEIS
+  // ============================================================
+
+  useEffect(() => {
+    async function carregarProdutosDisponiveis() {
+      try {
+        setCarregandoProdutosDisponiveis(true);
+        setErroProdutosDisponiveis(null);
+
+        const dados = await getProdutosDisponiveis();
+
+        setProdutosDisponiveis(dados);
+      } catch (error) {
+        const mensagem =
+          error instanceof Error
+            ? error.message
+            : "Não foi possível carregar os produtos disponíveis.";
+
+        setErroProdutosDisponiveis(mensagem);
+      } finally {
+        setCarregandoProdutosDisponiveis(false);
+      }
+    }
+
+    carregarProdutosDisponiveis();
   }, []);
 
   // ============================================================
@@ -78,7 +168,10 @@ function Dashboard() {
 
         setCategorias(dados);
       } catch (error) {
-        const mensagem = error instanceof Error ? error.message : "Não foi possível carregar as categorias.";
+        const mensagem =
+          error instanceof Error
+            ? error.message
+            : "Não foi possível carregar as categorias.";
 
         setErroCategorias(mensagem);
       } finally {
@@ -93,10 +186,8 @@ function Dashboard() {
   // PRODUTOS QUE PRECISAM DE ATENÇÃO
   // ============================================================
 
-  const produtosAtencao = produtos.filter(
-    (produto) =>
-      produto.quantidadeAtual === 0 ||
-      (produto.quantidadeAtual > 0 && produto.quantidadeAtual <= produto.quantidadeMinima)
+  const produtosAtencao = produtosEmEstoque.filter(
+    (produto) => produto.quantidadeAtual <= produto.quantidadeMinima,
   );
 
   // ============================================================
@@ -121,13 +212,101 @@ function Dashboard() {
   }
 
   // ============================================================
+  // ABRIR MODAL
+  // ============================================================
+
+  function abrirModalEntrada() {
+    setProdutoSelecionadoId(null);
+    setQuantidadeEntrada("");
+    setErroEntrada("");
+    setModalEntradaAberto(true);
+  }
+
+  // ============================================================
+  // FECHAR MODAL
+  // ============================================================
+
+  function fecharModalEntrada() {
+    if (salvandoEntrada) {
+      return;
+    }
+
+    setModalEntradaAberto(false);
+    setProdutoSelecionadoId(null);
+    setQuantidadeEntrada("");
+    setErroEntrada("");
+  }
+
+  // ============================================================
+  // REGISTRAR NOVA ENTRADA
+  // ============================================================
+
+  async function adicionarEntrada() {
+    setErroEntrada("");
+
+    if (produtoSelecionadoId === null) {
+      setErroEntrada("Selecione um produto.");
+      return;
+    }
+
+    const quantidade = Number(quantidadeEntrada);
+
+    if (
+      !quantidadeEntrada ||
+      !Number.isFinite(quantidade) ||
+      quantidade <= 0
+    ) {
+      setErroEntrada("Informe uma quantidade válida.");
+      return;
+    }
+
+    try {
+      setSalvandoEntrada(true);
+
+      await registrarEntrada(produtoSelecionadoId, {
+        quantidade,
+      });
+
+      /*
+       * Depois de registrar a entrada,
+       * buscamos novamente os produtos do estoque.
+       */
+      const produtosAtualizados = await getProdutos();
+
+      setProdutos(produtosAtualizados);
+
+      /*
+       * Fecha o modal após o sucesso.
+       */
+      setModalEntradaAberto(false);
+      setProdutoSelecionadoId(null);
+      setQuantidadeEntrada("");
+      setErroEntrada("");
+    } catch (error) {
+      if (error instanceof Error) {
+        setErroEntrada(error.message);
+      } else {
+        setErroEntrada("Não foi possível registrar a entrada.");
+      }
+    } finally {
+      setSalvandoEntrada(false);
+    }
+  }
+
+  // ============================================================
   // RENDERIZAÇÃO
   // ============================================================
 
   return (
     <div id="dashboard" className="flex min-h-screen flex-col">
-      <main id="dashboard-main" className="flex-1 bg-linear-to-b from-brand-100 to-brand-50 pb-24">
-        <span id="dashboard-breadcrumb" className="pb-1 font-bold text-brand-900">
+      <main
+        id="dashboard-main"
+        className="flex-1 bg-linear-to-b from-brand-100 to-brand-50 pb-24"
+      >
+        <span
+          id="dashboard-breadcrumb"
+          className="pb-1 font-bold text-brand-900"
+        >
           1. Início
         </span>
 
@@ -137,12 +316,21 @@ function Dashboard() {
             SAUDAÇÃO
         ====================================================== */}
 
-        <div id="dashboard-welcome" className="my-3 flex items-center justify-around">
-          <h1 id="dashboard-greeting" className="text-[22px] font-extrabold text-brand-900">
+        <div
+          id="dashboard-welcome"
+          className="my-3 flex items-center justify-around"
+        >
+          <h1
+            id="dashboard-greeting"
+            className="text-[22px] font-extrabold text-brand-900"
+          >
             Olá, Família Souza
           </h1>
 
-          <span id="dashboard-date" className="mt-2 text-[12px] font-bold text-brand-500">
+          <span
+            id="dashboard-date"
+            className="mt-2 text-[12px] font-bold text-brand-500"
+          >
             {dataFormatada}
           </span>
         </div>
@@ -163,7 +351,8 @@ function Dashboard() {
               id="attention-count"
               className="flex w-15 justify-center rounded-2xl bg-danger-100 px-1 text-[14px] font-bold text-danger-400"
             >
-              {produtosAtencao.length} {produtosAtencao.length === 1 ? "item" : "itens"}
+              {produtosAtencao.length}{" "}
+              {produtosAtencao.length === 1 ? "item" : "itens"}
             </p>
           </div>
         </div>
@@ -173,16 +362,29 @@ function Dashboard() {
         ====================================================== */}
 
         <div id="attention-section" className="mx-5">
-          <div id="attention-product-list" className="rounded-2xl bg-white p-3 shadow-sm">
-            {carregandoProdutos && <p className="text-ink-500 py-2 text-center text-sm">Carregando estoque...</p>}
+          <div
+            id="attention-product-list"
+            className="rounded-2xl bg-white p-3 shadow-sm"
+          >
+            {carregandoProdutos && (
+              <p className="text-ink-500 py-2 text-center text-sm">
+                Carregando estoque...
+              </p>
+            )}
 
             {!carregandoProdutos && erroProdutos && (
-              <p className="py-2 text-center text-sm text-danger-500">{erroProdutos}</p>
+              <p className="py-2 text-center text-sm text-danger-500">
+                {erroProdutos}
+              </p>
             )}
 
-            {!carregandoProdutos && !erroProdutos && produtosAtencao.length === 0 && (
-              <p className="text-ink-500 py-2 text-center text-sm">Nenhum produto precisa de atenção.</p>
-            )}
+            {!carregandoProdutos &&
+              !erroProdutos &&
+              produtosAtencao.length === 0 && (
+                <p className="text-ink-500 py-2 text-center text-sm">
+                  Nenhum produto precisa de atenção.
+                </p>
+              )}
 
             {!carregandoProdutos &&
               !erroProdutos &&
@@ -207,10 +409,13 @@ function Dashboard() {
                     {/* INFORMAÇÕES */}
 
                     <div id={`product-info-${produto.id}`}>
-                      <h2 className="text-[14px] leading-tight font-bold">{produto.nome}</h2>
+                      <h2 className="text-[14px] leading-tight font-bold">
+                        {produto.nome}
+                      </h2>
 
                       <p className="text-[10px] text-gray-500">
-                        Estoque: {produto.quantidadeAtual} {produto.unidade} · mín: {produto.quantidadeMinima}
+                        Estoque: {produto.quantidadeAtual} {produto.unidade} ·
+                        mín: {produto.quantidadeMinima}
                       </p>
                     </div>
 
@@ -248,8 +453,11 @@ function Dashboard() {
         ====================================================== */}
 
         <div className="mx-2 my-4 flex gap-2">
+          {/* NOVA ENTRADA */}
+
           <button
             type="button"
+            onClick={abrirModalEntrada}
             className="text=[12px] flex h-24 flex-1 cursor-pointer flex-col items-start justify-between rounded-2xl bg-accent-lime-300 p-3 font-bold text-ink-900 hover:bg-accent-lime-500"
           >
             <FaPlus />
@@ -260,6 +468,8 @@ function Dashboard() {
               no estoque
             </p>
           </button>
+
+          {/* REGISTRAR CONSUMO */}
 
           <button
             type="button"
@@ -282,37 +492,197 @@ function Dashboard() {
         <div className="font-bold text-ink-900">
           <h1 className="mx-3">Por categoria</h1>
 
-          {/* =================================================
-              CONTAINER COM ROLAGEM HORIZONTAL
-          ================================================== */}
-
           <div className="mx-2 my-4 overflow-x-auto pb-3">
-  <div className="flex gap-2">
-              {/* CARREGANDO */}
-
-              {carregandoCategorias && <p className="text-ink-500 text-sm">Carregando categorias...</p>}
-
-              {/* ERRO */}
-
-              {!carregandoCategorias && erroCategorias && <p className="text-sm text-danger-500">{erroCategorias}</p>}
-
-              {/* NENHUMA CATEGORIA */}
-
-              {!carregandoCategorias && !erroCategorias && categorias.length === 0 && (
-                <p className="text-ink-500 text-sm">Nenhuma categoria precisa de atenção.</p>
+            <div className="flex gap-2">
+              {carregandoCategorias && (
+                <p className="text-ink-500 text-sm">
+                  Carregando categorias...
+                </p>
               )}
 
-              {/* CATEGORIAS */}
+              {!carregandoCategorias && erroCategorias && (
+                <p className="text-sm text-danger-500">{erroCategorias}</p>
+              )}
 
               {!carregandoCategorias &&
                 !erroCategorias &&
-                categorias.map((categoria) => <CategoryCard key={categoria.id} categoria={categoria} />)}
+                categorias.length === 0 && (
+                  <p className="text-ink-500 text-sm">
+                    Nenhuma categoria precisa de atenção.
+                  </p>
+                )}
+
+              {!carregandoCategorias &&
+                !erroCategorias &&
+                categorias.map((categoria) => (
+                  <CategoryCard key={categoria.id} categoria={categoria} />
+                ))}
             </div>
           </div>
         </div>
       </main>
 
       <BottomNavigation />
+
+      {/* =====================================================
+          MODAL - NOVA ENTRADA
+      ====================================================== */}
+
+      {modalEntradaAberto && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              fecharModalEntrada();
+            }
+          }}
+        >
+          <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-xl">
+            {/* CABEÇALHO */}
+
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-extrabold text-brand-900">
+                  Nova entrada
+                </h2>
+
+                <p className="text-xs text-ink-400">
+                  Adicione uma quantidade ao estoque.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={fecharModalEntrada}
+                disabled={salvandoEntrada}
+                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-ink-400 transition hover:bg-brand-50 hover:text-ink-900 disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="Fechar"
+              >
+                <FaTimes />
+              </button>
+            </div>
+
+            {/* PRODUTO */}
+
+            <div className="mb-4">
+              <label
+                htmlFor="produto-entrada"
+                className="text-ink-700 mb-1 block text-xs font-bold"
+              >
+                Produto
+              </label>
+
+              <select
+                id="produto-entrada"
+                value={produtoSelecionadoId ?? ""}
+                onChange={(event) => {
+                  const valor = event.target.value;
+
+                  setProdutoSelecionadoId(
+                    valor === "" ? null : Number(valor),
+                  );
+
+                  setErroEntrada("");
+                }}
+                disabled={salvandoEntrada}
+                className="border-ink-200 disabled:bg-ink-50 w-full rounded-2xl border bg-white px-3 py-3 text-sm transition outline-none focus:border-brand-900 disabled:cursor-not-allowed"
+              >
+                <option value="">Selecione um produto</option>
+
+                {carregandoProdutosDisponiveis && (
+                  <option value="" disabled>
+                    Carregando produtos...
+                  </option>
+                )}
+
+                {!carregandoProdutosDisponiveis &&
+                  erroProdutosDisponiveis && (
+                    <option value="" disabled>
+                      Erro ao carregar produtos
+                    </option>
+                  )}
+
+                {!carregandoProdutosDisponiveis &&
+                  !erroProdutosDisponiveis &&
+                  produtosDisponiveis.map((produto) => (
+                    <option key={produto.id} value={produto.id}>
+                      {produto.nome} — atual: {produto.quantidadeAtual}{" "}
+                      {produto.unidade}
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            {/* QUANTIDADE */}
+
+            <div className="mb-4">
+              <label
+                htmlFor="quantidade-entrada"
+                className="text-ink-700 mb-1 block text-xs font-bold"
+              >
+                Quantidade
+              </label>
+
+              <div className="relative">
+                <input
+                  id="quantidade-entrada"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={quantidadeEntrada}
+                  onChange={(event) => {
+                    setQuantidadeEntrada(event.target.value);
+                    setErroEntrada("");
+                  }}
+                  disabled={salvandoEntrada}
+                  placeholder="Ex.: 5"
+                  className="border-ink-200 disabled:bg-ink-50 w-full rounded-2xl border bg-white px-3 py-3 pr-14 text-sm transition outline-none focus:border-brand-900 disabled:cursor-not-allowed"
+                />
+
+                {produtoSelecionadoId !== null && (
+                  <span className="absolute top-1/2 right-3 -translate-y-1/2 text-xs font-bold text-ink-400">
+                    {
+                      produtosDisponiveis.find(
+                        (produto) => produto.id === produtoSelecionadoId,
+                      )?.unidade
+                    }
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* ERRO */}
+
+            {erroEntrada && (
+              <p className="mb-4 rounded-xl bg-danger-100 px-3 py-2 text-xs font-bold text-danger-500">
+                {erroEntrada}
+              </p>
+            )}
+
+            {/* BOTÕES */}
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={fecharModalEntrada}
+                disabled={salvandoEntrada}
+                className="border-ink-200 hover:bg-ink-50 flex-1 cursor-pointer rounded-2xl border px-4 py-3 text-sm font-bold text-ink-600 transition disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={adicionarEntrada}
+                disabled={salvandoEntrada}
+                className="flex-1 cursor-pointer rounded-2xl bg-brand-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {salvandoEntrada ? "Adicionando..." : "Adicionar entrada"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
