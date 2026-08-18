@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import BottomNavigation from "../../components/layout/Footer/BottomNavigation";
 import Header from "../../components/layout/Header/Header";
-import { FaPlus, FaBars, FaTimes } from "react-icons/fa";
+import { FaPlus, FaBars } from "react-icons/fa";
 import CategoryCard from "../../components/ui/CategoryCard/CategoryCard";
+import NovaEntradaModal from "../../components/modals/NovaEntradaModal/NovaEntradaModal";
 
 import type { Produto } from "../../types/product";
 import type { CategoriaResumo } from "../../types/category";
@@ -44,36 +45,28 @@ function Dashboard() {
   }`;
 
   // ============================================================
-  // PRODUTOS DO ESTOQUE
+  // PRODUTOS
   // ============================================================
 
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [carregandoProdutos, setCarregandoProdutos] = useState(true);
   const [erroProdutos, setErroProdutos] = useState<string | null>(null);
 
-  /*
-   * Essa lista representa os produtos que estão sendo
-   * utilizados para exibir informações do estoque.
-   */
   const produtosEmEstoque = produtos.filter(
     (produto) => produto.quantidadeAtual > 0,
   );
 
   // ============================================================
-  // PRODUTOS DISPONÍVEIS PARA NOVA ENTRADA
+  // PRODUTOS DISPONÍVEIS
   // ============================================================
 
-  /*
-   * Essa é uma lista separada da lista do estoque.
-   *
-   * Aqui devem ficar TODOS os produtos cadastrados,
-   * mesmo aqueles que ainda possuem quantidade 0.
-   *
-   * Ela será utilizada somente no modal "Nova entrada".
-   */
-  const [produtosDisponiveis, setProdutosDisponiveis] = useState<Produto[]>([]);
+  const [produtosDisponiveis, setProdutosDisponiveis] = useState<Produto[]>(
+    [],
+  );
+
   const [carregandoProdutosDisponiveis, setCarregandoProdutosDisponiveis] =
     useState(true);
+
   const [erroProdutosDisponiveis, setErroProdutosDisponiveis] = useState<
     string | null
   >(null);
@@ -87,19 +80,14 @@ function Dashboard() {
   const [erroCategorias, setErroCategorias] = useState<string | null>(null);
 
   // ============================================================
-  // MODAL - NOVA ENTRADA
+  // MODAL NOVA ENTRADA
   // ============================================================
 
   const [modalEntradaAberto, setModalEntradaAberto] = useState(false);
-  const [produtoSelecionadoId, setProdutoSelecionadoId] = useState<
-    number | null
-  >(null);
-  const [quantidadeEntrada, setQuantidadeEntrada] = useState("");
   const [salvandoEntrada, setSalvandoEntrada] = useState(false);
-  const [erroEntrada, setErroEntrada] = useState("");
 
   // ============================================================
-  // BUSCAR PRODUTOS DO ESTOQUE
+  // CARREGAR PRODUTOS
   // ============================================================
 
   useEffect(() => {
@@ -127,7 +115,7 @@ function Dashboard() {
   }, []);
 
   // ============================================================
-  // BUSCAR PRODUTOS DISPONÍVEIS
+  // CARREGAR PRODUTOS DISPONÍVEIS
   // ============================================================
 
   useEffect(() => {
@@ -155,7 +143,7 @@ function Dashboard() {
   }, []);
 
   // ============================================================
-  // BUSCAR CATEGORIAS
+  // CARREGAR CATEGORIAS
   // ============================================================
 
   useEffect(() => {
@@ -212,19 +200,12 @@ function Dashboard() {
   }
 
   // ============================================================
-  // ABRIR MODAL
+  // MODAL
   // ============================================================
 
   function abrirModalEntrada() {
-    setProdutoSelecionadoId(null);
-    setQuantidadeEntrada("");
-    setErroEntrada("");
     setModalEntradaAberto(true);
   }
-
-  // ============================================================
-  // FECHAR MODAL
-  // ============================================================
 
   function fecharModalEntrada() {
     if (salvandoEntrada) {
@@ -232,69 +213,40 @@ function Dashboard() {
     }
 
     setModalEntradaAberto(false);
-    setProdutoSelecionadoId(null);
-    setQuantidadeEntrada("");
-    setErroEntrada("");
   }
 
   // ============================================================
-  // REGISTRAR NOVA ENTRADA
+  // REGISTRAR ENTRADA
   // ============================================================
 
-  async function adicionarEntrada() {
-    setErroEntrada("");
-
-    if (produtoSelecionadoId === null) {
-      setErroEntrada("Selecione um produto.");
-      return;
-    }
-
-    const quantidade = Number(quantidadeEntrada);
-
-    if (
-      !quantidadeEntrada ||
-      !Number.isFinite(quantidade) ||
-      quantidade <= 0
-    ) {
-      setErroEntrada("Informe uma quantidade válida.");
-      return;
-    }
-
+  async function adicionarEntrada(
+    produtoId: number,
+    quantidade: number,
+  ): Promise<void> {
     try {
       setSalvandoEntrada(true);
 
-      await registrarEntrada(produtoSelecionadoId, {
+      await registrarEntrada(produtoId, {
         quantidade,
       });
 
-      /*
-       * Depois de registrar a entrada,
-       * buscamos novamente os produtos do estoque.
-       */
       const produtosAtualizados = await getProdutos();
 
       setProdutos(produtosAtualizados);
 
-      /*
-       * Fecha o modal após o sucesso.
-       */
+      const produtosDisponiveisAtualizados =
+        await getProdutosDisponiveis();
+
+      setProdutosDisponiveis(produtosDisponiveisAtualizados);
+
       setModalEntradaAberto(false);
-      setProdutoSelecionadoId(null);
-      setQuantidadeEntrada("");
-      setErroEntrada("");
-    } catch (error) {
-      if (error instanceof Error) {
-        setErroEntrada(error.message);
-      } else {
-        setErroEntrada("Não foi possível registrar a entrada.");
-      }
     } finally {
       setSalvandoEntrada(false);
     }
   }
 
   // ============================================================
-  // RENDERIZAÇÃO
+  // RENDER
   // ============================================================
 
   return (
@@ -310,11 +262,11 @@ function Dashboard() {
           1. Início
         </span>
 
+        {/* HEADER SEM BOTÃO + */}
+
         <Header produtos={produtos} />
 
-        {/* =====================================================
-            SAUDAÇÃO
-        ====================================================== */}
+        {/* SAUDAÇÃO */}
 
         <div
           id="dashboard-welcome"
@@ -335,9 +287,7 @@ function Dashboard() {
           </span>
         </div>
 
-        {/* =====================================================
-            PRECISA DE ATENÇÃO
-        ====================================================== */}
+        {/* PRECISA DE ATENÇÃO */}
 
         <div className="mx-5 flex justify-between pb-3">
           <div id="attention-title-container">
@@ -357,9 +307,7 @@ function Dashboard() {
           </div>
         </div>
 
-        {/* =====================================================
-            LISTA DE PRODUTOS
-        ====================================================== */}
+        {/* LISTA DE PRODUTOS */}
 
         <div id="attention-section" className="mx-5">
           <div
@@ -397,8 +345,6 @@ function Dashboard() {
                     key={produto.id}
                     className="grid grid-cols-[40px_1fr_auto] items-center gap-3 py-2 first:pt-0 last:pb-0"
                   >
-                    {/* ÍCONE */}
-
                     <div
                       id={`product-icon-${produto.id}`}
                       className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 text-xs font-bold text-purple-700"
@@ -406,25 +352,24 @@ function Dashboard() {
                       {produto.nome.substring(0, 2).toUpperCase()}
                     </div>
 
-                    {/* INFORMAÇÕES */}
-
                     <div id={`product-info-${produto.id}`}>
                       <h2 className="text-[14px] leading-tight font-bold">
                         {produto.nome}
                       </h2>
 
                       <p className="text-[10px] text-gray-500">
-                        Estoque: {produto.quantidadeAtual} {produto.unidade} ·
-                        mín: {produto.quantidadeMinima}
+                        Estoque: {produto.quantidadeAtual}{" "}
+                        {produto.unidade} · mín:{" "}
+                        {produto.quantidadeMinima}
                       </p>
                     </div>
-
-                    {/* STATUS */}
 
                     <div
                       id={`product-status-${produto.id}`}
                       className={`rounded-2xl px-3 py-1 text-xs font-bold whitespace-nowrap ${
-                        statusStyles[status as keyof typeof statusStyles]
+                        statusStyles[
+                          status as keyof typeof statusStyles
+                        ]
                       }`}
                     >
                       {status}
@@ -435,9 +380,7 @@ function Dashboard() {
           </div>
         </div>
 
-        {/* =====================================================
-            BOTÃO - LISTA DE COMPRAS
-        ====================================================== */}
+        {/* LISTA DE COMPRAS */}
 
         <div id="attention-actions">
           <button
@@ -448,13 +391,9 @@ function Dashboard() {
           </button>
         </div>
 
-        {/* =====================================================
-            AÇÕES
-        ====================================================== */}
+        {/* AÇÕES */}
 
         <div className="mx-2 my-4 flex gap-2">
-          {/* NOVA ENTRADA */}
-
           <button
             type="button"
             onClick={abrirModalEntrada}
@@ -468,8 +407,6 @@ function Dashboard() {
               no estoque
             </p>
           </button>
-
-          {/* REGISTRAR CONSUMO */}
 
           <button
             type="button"
@@ -485,9 +422,7 @@ function Dashboard() {
           </button>
         </div>
 
-        {/* =====================================================
-            POR CATEGORIA
-        ====================================================== */}
+        {/* POR CATEGORIA */}
 
         <div className="font-bold text-ink-900">
           <h1 className="mx-3">Por categoria</h1>
@@ -501,7 +436,9 @@ function Dashboard() {
               )}
 
               {!carregandoCategorias && erroCategorias && (
-                <p className="text-sm text-danger-500">{erroCategorias}</p>
+                <p className="text-sm text-danger-500">
+                  {erroCategorias}
+                </p>
               )}
 
               {!carregandoCategorias &&
@@ -515,7 +452,10 @@ function Dashboard() {
               {!carregandoCategorias &&
                 !erroCategorias &&
                 categorias.map((categoria) => (
-                  <CategoryCard key={categoria.id} categoria={categoria} />
+                  <CategoryCard
+                    key={categoria.id}
+                    categoria={categoria}
+                  />
                 ))}
             </div>
           </div>
@@ -524,165 +464,17 @@ function Dashboard() {
 
       <BottomNavigation />
 
-      {/* =====================================================
-          MODAL - NOVA ENTRADA
-      ====================================================== */}
-
-      {modalEntradaAberto && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) {
-              fecharModalEntrada();
-            }
-          }}
-        >
-          <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-xl">
-            {/* CABEÇALHO */}
-
-            <div className="mb-5 flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-extrabold text-brand-900">
-                  Nova entrada
-                </h2>
-
-                <p className="text-xs text-ink-400">
-                  Adicione uma quantidade ao estoque.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={fecharModalEntrada}
-                disabled={salvandoEntrada}
-                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-ink-400 transition hover:bg-brand-50 hover:text-ink-900 disabled:cursor-not-allowed disabled:opacity-40"
-                aria-label="Fechar"
-              >
-                <FaTimes />
-              </button>
-            </div>
-
-            {/* PRODUTO */}
-
-            <div className="mb-4">
-              <label
-                htmlFor="produto-entrada"
-                className="text-ink-700 mb-1 block text-xs font-bold"
-              >
-                Produto
-              </label>
-
-              <select
-                id="produto-entrada"
-                value={produtoSelecionadoId ?? ""}
-                onChange={(event) => {
-                  const valor = event.target.value;
-
-                  setProdutoSelecionadoId(
-                    valor === "" ? null : Number(valor),
-                  );
-
-                  setErroEntrada("");
-                }}
-                disabled={salvandoEntrada}
-                className="border-ink-200 disabled:bg-ink-50 w-full rounded-2xl border bg-white px-3 py-3 text-sm transition outline-none focus:border-brand-900 disabled:cursor-not-allowed"
-              >
-                <option value="">Selecione um produto</option>
-
-                {carregandoProdutosDisponiveis && (
-                  <option value="" disabled>
-                    Carregando produtos...
-                  </option>
-                )}
-
-                {!carregandoProdutosDisponiveis &&
-                  erroProdutosDisponiveis && (
-                    <option value="" disabled>
-                      Erro ao carregar produtos
-                    </option>
-                  )}
-
-                {!carregandoProdutosDisponiveis &&
-                  !erroProdutosDisponiveis &&
-                  produtosDisponiveis.map((produto) => (
-                    <option key={produto.id} value={produto.id}>
-                      {produto.nome} — atual: {produto.quantidadeAtual}{" "}
-                      {produto.unidade}
-                    </option>
-                  ))}
-              </select>
-            </div>
-
-            {/* QUANTIDADE */}
-
-            <div className="mb-4">
-              <label
-                htmlFor="quantidade-entrada"
-                className="text-ink-700 mb-1 block text-xs font-bold"
-              >
-                Quantidade
-              </label>
-
-              <div className="relative">
-                <input
-                  id="quantidade-entrada"
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  value={quantidadeEntrada}
-                  onChange={(event) => {
-                    setQuantidadeEntrada(event.target.value);
-                    setErroEntrada("");
-                  }}
-                  disabled={salvandoEntrada}
-                  placeholder="Ex.: 5"
-                  className="border-ink-200 disabled:bg-ink-50 w-full rounded-2xl border bg-white px-3 py-3 pr-14 text-sm transition outline-none focus:border-brand-900 disabled:cursor-not-allowed"
-                />
-
-                {produtoSelecionadoId !== null && (
-                  <span className="absolute top-1/2 right-3 -translate-y-1/2 text-xs font-bold text-ink-400">
-                    {
-                      produtosDisponiveis.find(
-                        (produto) => produto.id === produtoSelecionadoId,
-                      )?.unidade
-                    }
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* ERRO */}
-
-            {erroEntrada && (
-              <p className="mb-4 rounded-xl bg-danger-100 px-3 py-2 text-xs font-bold text-danger-500">
-                {erroEntrada}
-              </p>
-            )}
-
-            {/* BOTÕES */}
-
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={fecharModalEntrada}
-                disabled={salvandoEntrada}
-                className="border-ink-200 hover:bg-ink-50 flex-1 cursor-pointer rounded-2xl border px-4 py-3 text-sm font-bold text-ink-600 transition disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-
-              <button
-                type="button"
-                onClick={adicionarEntrada}
-                disabled={salvandoEntrada}
-                className="flex-1 cursor-pointer rounded-2xl bg-brand-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {salvandoEntrada ? "Adicionando..." : "Adicionar entrada"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <NovaEntradaModal
+        aberto={modalEntradaAberto}
+        produtosDisponiveis={produtosDisponiveis}
+        carregandoProdutosDisponiveis={
+          carregandoProdutosDisponiveis
+        }
+        erroProdutosDisponiveis={erroProdutosDisponiveis}
+        salvando={salvandoEntrada}
+        onFechar={fecharModalEntrada}
+        onAdicionar={adicionarEntrada}
+      />
     </div>
   );
 }

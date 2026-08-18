@@ -1,17 +1,20 @@
 import { z } from "zod";
 
 export const categoriaSchema = z.object({
-  id: z.number(),
-  nome: z.string(),
+  id: z.number().int(),
+  nome: z.string().trim().min(1, "O nome é obrigatório.").max(60, "O nome deve ter no máximo 60 caracteres."),
 });
 
-export const categoriaResumoSchema = z.object({
-  id: z.number(),
-  nome: z.string(),
-  quantidade: z.number(),
-  porcentagem: z.number(),
+export const categoriaFormSchema = z.object({
+  nome: z
+    .string({
+      error: "O nome é obrigatório.",
+    })
+    .trim()
+    .min(1, "O nome é obrigatório.")
+    .max(60, "O nome deve ter no máximo 60 caracteres."),
 });
 
 export type Categoria = z.infer<typeof categoriaSchema>;
 
-export type CategoriaResumo = z.infer<typeof categoriaResumoSchema>;
+export type CategoriaForm = z.infer<typeof categoriaFormSchema>;

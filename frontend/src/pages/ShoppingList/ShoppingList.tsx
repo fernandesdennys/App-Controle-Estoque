@@ -9,6 +9,10 @@ function ShoppingList() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
 
+  // ============================================================
+  // CARREGAR PRODUTOS
+  // ============================================================
+
   useEffect(() => {
     async function carregarProdutos() {
       try {
@@ -32,36 +36,50 @@ function ShoppingList() {
     carregarProdutos();
   }, []);
 
+  // ============================================================
+  // NOVA LISTA DE COMPRAS
+  // ============================================================
+
+  function abrirNovaLista() {
+    /*
+     * Futuramente vamos abrir aqui o modal
+     * para criar uma nova lista de compras.
+     */
+    console.log("Abrir nova lista de compras");
+  }
+
   return (
     <div className="flex min-h-screen flex-col">
       <main className="flex-1 bg-linear-to-b from-brand-200 to-brand-100">
-        <span className="pb-1 font-bold text-brand-900">
-          3. Lista de Compras
-        </span>
+        <span className="pb-1 font-bold text-brand-900">3. Lista de Compras</span>
 
-        <Header produtos={produtos} />
+        {/* =====================================================
+            HEADER COM BOTÃO +
+        ====================================================== */}
 
-        {carregando && (
-          <p className="mt-4 text-center text-sm text-ink-500">
-            Carregando...
-          </p>
-        )}
+        <Header produtos={produtos} mostrarBotaoAdicionar onAdicionar={abrirNovaLista} />
 
-        {erro && (
-          <p className="mt-4 text-center text-sm text-danger-500">
-            {erro}
-          </p>
-        )}
+        {/* =====================================================
+            CARREGAMENTO
+        ====================================================== */}
+
+        {carregando && <p className="text-ink-500 mt-4 text-center text-sm">Carregando...</p>}
+
+        {/* =====================================================
+            ERRO
+        ====================================================== */}
+
+        {erro && <p className="mt-4 text-center text-sm text-danger-500">{erro}</p>}
+
+        {/* =====================================================
+            CONTEÚDO
+        ====================================================== */}
 
         {!carregando && !erro && (
           <div className="mx-3 mt-4 rounded-2xl bg-white p-4 shadow-sm">
-            <h1 className="font-bold text-ink-900">
-              Lista de Compras
-            </h1>
+            <h1 className="font-bold text-ink-900">Lista de Compras</h1>
 
-            <p className="mt-2 text-sm text-ink-500">
-              Sua lista de compras aparecerá aqui.
-            </p>
+            <p className="text-ink-500 mt-2 text-sm">Sua lista de compras aparecerá aqui.</p>
           </div>
         )}
       </main>
