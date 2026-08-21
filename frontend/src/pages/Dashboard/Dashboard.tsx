@@ -4,72 +4,37 @@ import Header from "../../components/layout/Header/Header";
 import { FaPlus, FaBars } from "react-icons/fa";
 import CategoryCard from "../../components/ui/CategoryCard/CategoryCard";
 import NovaEntradaModal from "../../components/modals/NovaEntradaModal/NovaEntradaModal";
-
 import type { Produto } from "../../types/product";
 import type { CategoriaResumo } from "../../types/category";
-
-import {
-  getProdutos,
-  getProdutosDisponiveis,
-} from "../../services/productService";
-
+import { getProdutos, getProdutosDisponiveis } from "../../services/productService";
 import { getCategoriasResumo } from "../../services/categoryService";
 import { registrarEntrada } from "../../services/movementService";
+import { useNavigate } from "react-router-dom";
 
 function Dashboard() {
-  // ============================================================
-  // DATA ATUAL
-  // ============================================================
 
   const dataAtual = new Date();
-
   const dias = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-
-  const meses = [
-    "jan",
-    "fev",
-    "mar",
-    "abr",
-    "mai",
-    "jun",
-    "jul",
-    "ago",
-    "set",
-    "out",
-    "nov",
-    "dez",
-  ];
-
-  const dataFormatada = `${dias[dataAtual.getDay()]}, ${dataAtual.getDate()} ${
-    meses[dataAtual.getMonth()]
-  }`;
+  const meses = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+  const dataFormatada = `${dias[dataAtual.getDay()]}, ${dataAtual.getDate()} ${meses[dataAtual.getMonth()]}`;
 
   // ============================================================
   // PRODUTOS
   // ============================================================
+  const navigate = useNavigate();
 
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [carregandoProdutos, setCarregandoProdutos] = useState(true);
   const [erroProdutos, setErroProdutos] = useState<string | null>(null);
-
-  const produtosEmEstoque = produtos.filter(
-    (produto) => produto.quantidadeAtual > 0,
-  );
+  const produtosEmEstoque = produtos.filter((produto) => produto.quantidadeAtual > 0);
 
   // ============================================================
   // PRODUTOS DISPONÍVEIS
   // ============================================================
 
-  const [produtosDisponiveis, setProdutosDisponiveis] = useState<Produto[]>(
-    [],
-  );
-
-  const [carregandoProdutosDisponiveis, setCarregandoProdutosDisponiveis] =
-    useState(true);
-
-  const [erroProdutosDisponiveis, setErroProdutosDisponiveis] = useState<
-    string | null
-  >(null);
+  const [produtosDisponiveis, setProdutosDisponiveis] = useState<Produto[]>([]);
+  const [carregandoProdutosDisponiveis, setCarregandoProdutosDisponiveis] = useState(true);
+  const [erroProdutosDisponiveis, setErroProdutosDisponiveis] = useState<string | null>(null);
 
   // ============================================================
   // CATEGORIAS
@@ -100,10 +65,7 @@ function Dashboard() {
 
         setProdutos(dados);
       } catch (error) {
-        const mensagem =
-          error instanceof Error
-            ? error.message
-            : "Não foi possível carregar os produtos.";
+        const mensagem = error instanceof Error ? error.message : "Não foi possível carregar os produtos.";
 
         setErroProdutos(mensagem);
       } finally {
@@ -128,10 +90,7 @@ function Dashboard() {
 
         setProdutosDisponiveis(dados);
       } catch (error) {
-        const mensagem =
-          error instanceof Error
-            ? error.message
-            : "Não foi possível carregar os produtos disponíveis.";
+        const mensagem = error instanceof Error ? error.message : "Não foi possível carregar os produtos disponíveis.";
 
         setErroProdutosDisponiveis(mensagem);
       } finally {
@@ -156,10 +115,7 @@ function Dashboard() {
 
         setCategorias(dados);
       } catch (error) {
-        const mensagem =
-          error instanceof Error
-            ? error.message
-            : "Não foi possível carregar as categorias.";
+        const mensagem = error instanceof Error ? error.message : "Não foi possível carregar as categorias.";
 
         setErroCategorias(mensagem);
       } finally {
@@ -174,9 +130,7 @@ function Dashboard() {
   // PRODUTOS QUE PRECISAM DE ATENÇÃO
   // ============================================================
 
-  const produtosAtencao = produtosEmEstoque.filter(
-    (produto) => produto.quantidadeAtual <= produto.quantidadeMinima,
-  );
+  const produtosAtencao = produtosEmEstoque.filter((produto) => produto.quantidadeAtual <= produto.quantidadeMinima);
 
   // ============================================================
   // STATUS
@@ -219,10 +173,7 @@ function Dashboard() {
   // REGISTRAR ENTRADA
   // ============================================================
 
-  async function adicionarEntrada(
-    produtoId: number,
-    quantidade: number,
-  ): Promise<void> {
+  async function adicionarEntrada(produtoId: number, quantidade: number): Promise<void> {
     try {
       setSalvandoEntrada(true);
 
@@ -234,8 +185,7 @@ function Dashboard() {
 
       setProdutos(produtosAtualizados);
 
-      const produtosDisponiveisAtualizados =
-        await getProdutosDisponiveis();
+      const produtosDisponiveisAtualizados = await getProdutosDisponiveis();
 
       setProdutosDisponiveis(produtosDisponiveisAtualizados);
 
@@ -251,14 +201,8 @@ function Dashboard() {
 
   return (
     <div id="dashboard" className="flex min-h-screen flex-col">
-      <main
-        id="dashboard-main"
-        className="flex-1 bg-linear-to-b from-brand-100 to-brand-50 pb-24"
-      >
-        <span
-          id="dashboard-breadcrumb"
-          className="pb-1 font-bold text-brand-900"
-        >
+      <main id="dashboard-main" className="flex-1 bg-linear-to-b from-brand-100 to-brand-50 pb-24">
+        <span id="dashboard-breadcrumb" className="pb-1 font-bold text-brand-900">
           1. Início
         </span>
 
@@ -268,21 +212,12 @@ function Dashboard() {
 
         {/* SAUDAÇÃO */}
 
-        <div
-          id="dashboard-welcome"
-          className="my-3 flex items-center justify-around"
-        >
-          <h1
-            id="dashboard-greeting"
-            className="text-[22px] font-extrabold text-brand-900"
-          >
+        <div id="dashboard-welcome" className="my-3 flex items-center justify-around">
+          <h1 id="dashboard-greeting" className="text-[22px] font-extrabold text-brand-900">
             Olá, Família Souza
           </h1>
 
-          <span
-            id="dashboard-date"
-            className="mt-2 text-[12px] font-bold text-brand-500"
-          >
+          <span id="dashboard-date" className="mt-2 text-[12px] font-bold text-brand-500">
             {dataFormatada}
           </span>
         </div>
@@ -301,8 +236,7 @@ function Dashboard() {
               id="attention-count"
               className="flex w-15 justify-center rounded-2xl bg-danger-100 px-1 text-[14px] font-bold text-danger-400"
             >
-              {produtosAtencao.length}{" "}
-              {produtosAtencao.length === 1 ? "item" : "itens"}
+              {produtosAtencao.length} {produtosAtencao.length === 1 ? "item" : "itens"}
             </p>
           </div>
         </div>
@@ -310,29 +244,16 @@ function Dashboard() {
         {/* LISTA DE PRODUTOS */}
 
         <div id="attention-section" className="mx-5">
-          <div
-            id="attention-product-list"
-            className="rounded-2xl bg-white p-3 shadow-sm"
-          >
-            {carregandoProdutos && (
-              <p className="text-ink-500 py-2 text-center text-sm">
-                Carregando estoque...
-              </p>
-            )}
+          <div id="attention-product-list" className="rounded-2xl bg-white p-3 shadow-sm">
+            {carregandoProdutos && <p className="text-ink-500 py-2 text-center text-sm">Carregando estoque...</p>}
 
             {!carregandoProdutos && erroProdutos && (
-              <p className="py-2 text-center text-sm text-danger-500">
-                {erroProdutos}
-              </p>
+              <p className="py-2 text-center text-sm text-danger-500">{erroProdutos}</p>
             )}
 
-            {!carregandoProdutos &&
-              !erroProdutos &&
-              produtosAtencao.length === 0 && (
-                <p className="text-ink-500 py-2 text-center text-sm">
-                  Nenhum produto precisa de atenção.
-                </p>
-              )}
+            {!carregandoProdutos && !erroProdutos && produtosAtencao.length === 0 && (
+              <p className="text-ink-500 py-2 text-center text-sm">Nenhum produto precisa de atenção.</p>
+            )}
 
             {!carregandoProdutos &&
               !erroProdutos &&
@@ -353,23 +274,17 @@ function Dashboard() {
                     </div>
 
                     <div id={`product-info-${produto.id}`}>
-                      <h2 className="text-[14px] leading-tight font-bold">
-                        {produto.nome}
-                      </h2>
+                      <h2 className="text-[14px] leading-tight font-bold">{produto.nome}</h2>
 
                       <p className="text-[10px] text-gray-500">
-                        Estoque: {produto.quantidadeAtual}{" "}
-                        {produto.unidade} · mín:{" "}
-                        {produto.quantidadeMinima}
+                        Estoque: {produto.quantidadeAtual} {produto.unidade} · mín: {produto.quantidadeMinima}
                       </p>
                     </div>
 
                     <div
                       id={`product-status-${produto.id}`}
                       className={`rounded-2xl px-3 py-1 text-xs font-bold whitespace-nowrap ${
-                        statusStyles[
-                          status as keyof typeof statusStyles
-                        ]
+                        statusStyles[status as keyof typeof statusStyles]
                       }`}
                     >
                       {status}
@@ -409,17 +324,18 @@ function Dashboard() {
           </button>
 
           <button
-            type="button"
-            className="flex h-24 flex-1 cursor-pointer flex-col items-start justify-between rounded-2xl bg-accent-blue-400 p-3 font-bold text-surface-card hover:bg-accent-blue-600"
-          >
-            <FaBars />
+  type="button"
+  onClick={() => navigate("/History")}
+  className="flex h-24 flex-1 cursor-pointer flex-col items-start justify-between rounded-2xl bg-accent-blue-400 p-3 font-bold text-surface-card hover:bg-accent-blue-600"
+>
+  <FaBars />
 
-            <p className="text-left leading-tight">
-              Registrar
-              <br />
-              consumo
-            </p>
-          </button>
+  <p className="text-left leading-tight">
+    Registrar
+    <br />
+    consumo
+  </p>
+</button>
         </div>
 
         {/* POR CATEGORIA */}
@@ -429,34 +345,17 @@ function Dashboard() {
 
           <div className="mx-2 my-4 overflow-x-auto pb-3">
             <div className="flex gap-2">
-              {carregandoCategorias && (
-                <p className="text-ink-500 text-sm">
-                  Carregando categorias...
-                </p>
-              )}
+              {carregandoCategorias && <p className="text-ink-500 text-sm">Carregando categorias...</p>}
 
-              {!carregandoCategorias && erroCategorias && (
-                <p className="text-sm text-danger-500">
-                  {erroCategorias}
-                </p>
+              {!carregandoCategorias && erroCategorias && <p className="text-sm text-danger-500">{erroCategorias}</p>}
+
+              {!carregandoCategorias && !erroCategorias && categorias.length === 0 && (
+                <p className="text-ink-500 text-sm">Nenhuma categoria precisa de atenção.</p>
               )}
 
               {!carregandoCategorias &&
                 !erroCategorias &&
-                categorias.length === 0 && (
-                  <p className="text-ink-500 text-sm">
-                    Nenhuma categoria precisa de atenção.
-                  </p>
-                )}
-
-              {!carregandoCategorias &&
-                !erroCategorias &&
-                categorias.map((categoria) => (
-                  <CategoryCard
-                    key={categoria.id}
-                    categoria={categoria}
-                  />
-                ))}
+                categorias.map((categoria) => <CategoryCard key={categoria.id} categoria={categoria} />)}
             </div>
           </div>
         </div>
@@ -467,9 +366,7 @@ function Dashboard() {
       <NovaEntradaModal
         aberto={modalEntradaAberto}
         produtosDisponiveis={produtosDisponiveis}
-        carregandoProdutosDisponiveis={
-          carregandoProdutosDisponiveis
-        }
+        carregandoProdutosDisponiveis={carregandoProdutosDisponiveis}
         erroProdutosDisponiveis={erroProdutosDisponiveis}
         salvando={salvandoEntrada}
         onFechar={fecharModalEntrada}

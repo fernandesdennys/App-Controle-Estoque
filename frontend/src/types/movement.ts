@@ -1,30 +1,16 @@
-/**
- * Tipos de movimentação disponíveis no backend.
- */
-export type TipoMovimentacao = "ENTRADA" | "SAIDA" | "AJUSTE" | "DESCARTE";
+export type TipoMovimentacao = "ENTRADA" | "SAIDA" | "DESCARTE" | "AJUSTE";
 
-/**
- * Dados enviados pelo frontend
- * ao registrar uma movimentação.
- *
- * Corresponde ao MovimentacaoInsertDTO
- * do backend.
- */
-export interface MovimentacaoInsert {
-  quantidade: number;
-  observacao?: string;
-}
-
-/**
- * Movimentação retornada pelo backend.
- *
- * Corresponde ao MovimentacaoDTO.
- */
 export interface Movimentacao {
   id: number;
   produtoId: number;
+  produtoNome?: string;
   tipo: TipoMovimentacao;
   quantidade: number;
-  observacao?: string;
+  observacao: string;
   criadoEm: string;
+}
+
+export interface MovimentacaoInsert {
+  quantidade: number;
+  observacao?: string;
 }
