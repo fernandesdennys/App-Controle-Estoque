@@ -145,7 +145,7 @@ function NovaEntradaModal({
               !erroProdutosDisponiveis &&
               produtosDisponiveis.map((produto) => (
                 <option key={produto.id} value={produto.id}>
-                  {produto.nome} — atual: {produto.quantidadeAtual} {produto.unidade}
+                  {produto.nome}
                 </option>
               ))}
           </select>

@@ -189,7 +189,7 @@ function History() {
                   return (
                     <div
                       key={movimentacao.id}
-                      className="flex min-h-[58px] items-center rounded-2xl bg-white px-3 py-2 shadow-sm"
+                      className="flex min-h-14.5 items-center rounded-2xl bg-white px-3 py-2 shadow-sm"
                     >
                       {/* SETA */}
 

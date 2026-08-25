@@ -6,13 +6,12 @@ import CategoryCard from "../../components/ui/CategoryCard/CategoryCard";
 import NovaEntradaModal from "../../components/modals/NovaEntradaModal/NovaEntradaModal";
 import type { Produto } from "../../types/product";
 import type { CategoriaResumo } from "../../types/category";
-import { getProdutos, getProdutosDisponiveis } from "../../services/productService";
+import { getProdutos, getCatalogoProdutos } from "../../services/productService";
 import { getCategoriasResumo } from "../../services/categoryService";
 import { registrarEntrada } from "../../services/movementService";
 import { useNavigate } from "react-router-dom";
 
 function Dashboard() {
-
   const dataAtual = new Date();
   const dias = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
   const meses = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
@@ -29,11 +28,23 @@ function Dashboard() {
   const produtosEmEstoque = produtos.filter((produto) => produto.quantidadeAtual > 0);
 
   // ============================================================
-  // PRODUTOS DISPONÍVEIS
+  // PRODUTOS DISPONÍVEIS (PARA O MODAL DE NOVA ENTRADA)
+  // ============================================================
+  //
+  // Usamos o CATÁLOGO COMPLETO (getCatalogoProdutos), não a lista
+  // de produtos ativos do estoque. O modal precisa permitir tanto
+  // reforçar a quantidade de um produto já ativo quanto reativar
+  // um produto que foi removido do estoque (ativo = false) — por
+  // isso a lista não pode ser filtrada por "ativo".
+  //
+  // Carregada sob demanda, sempre que o modal é aberto (veja
+  // abrirModalEntrada), para nunca ficar desatualizada caso o
+  // usuário tenha alterado produtos em outra tela (ex: Estoque)
+  // antes de voltar ao Dashboard sem recarregar a página.
   // ============================================================
 
   const [produtosDisponiveis, setProdutosDisponiveis] = useState<Produto[]>([]);
-  const [carregandoProdutosDisponiveis, setCarregandoProdutosDisponiveis] = useState(true);
+  const [carregandoProdutosDisponiveis, setCarregandoProdutosDisponiveis] = useState(false);
   const [erroProdutosDisponiveis, setErroProdutosDisponiveis] = useState<string | null>(null);
 
   // ============================================================
@@ -74,31 +85,6 @@ function Dashboard() {
     }
 
     carregarProdutos();
-  }, []);
-
-  // ============================================================
-  // CARREGAR PRODUTOS DISPONÍVEIS
-  // ============================================================
-
-  useEffect(() => {
-    async function carregarProdutosDisponiveis() {
-      try {
-        setCarregandoProdutosDisponiveis(true);
-        setErroProdutosDisponiveis(null);
-
-        const dados = await getProdutosDisponiveis();
-
-        setProdutosDisponiveis(dados);
-      } catch (error) {
-        const mensagem = error instanceof Error ? error.message : "Não foi possível carregar os produtos disponíveis.";
-
-        setErroProdutosDisponiveis(mensagem);
-      } finally {
-        setCarregandoProdutosDisponiveis(false);
-      }
-    }
-
-    carregarProdutosDisponiveis();
   }, []);
 
   // ============================================================
@@ -156,9 +142,26 @@ function Dashboard() {
   // ============================================================
   // MODAL
   // ============================================================
+  //
+  // Busca produtosDisponiveis sempre que o modal é aberto,
+  // garantindo dados sempre atualizados (ver comentário acima).
+  // ============================================================
 
-  function abrirModalEntrada() {
+  async function abrirModalEntrada() {
     setModalEntradaAberto(true);
+
+    try {
+      setCarregandoProdutosDisponiveis(true);
+      setErroProdutosDisponiveis(null);
+
+      const dados = await getCatalogoProdutos();
+      setProdutosDisponiveis(dados);
+    } catch (error) {
+      const mensagem = error instanceof Error ? error.message : "Não foi possível carregar os produtos disponíveis.";
+      setErroProdutosDisponiveis(mensagem);
+    } finally {
+      setCarregandoProdutosDisponiveis(false);
+    }
   }
 
   function fecharModalEntrada() {
@@ -185,7 +188,7 @@ function Dashboard() {
 
       setProdutos(produtosAtualizados);
 
-      const produtosDisponiveisAtualizados = await getProdutosDisponiveis();
+      const produtosDisponiveisAtualizados = await getCatalogoProdutos();
 
       setProdutosDisponiveis(produtosDisponiveisAtualizados);
 
@@ -300,6 +303,7 @@ function Dashboard() {
         <div id="attention-actions">
           <button
             type="button"
+            onClick={() => navigate("/shopping-list")}
             className="m-auto mt-3 flex w-[90%] cursor-pointer items-center justify-center rounded-full border bg-brand-100 py-2 font-bold text-brand-800 hover:bg-brand-200 hover:shadow-sm"
           >
             Ver lista de compras
@@ -324,18 +328,18 @@ function Dashboard() {
           </button>
 
           <button
-  type="button"
-  onClick={() => navigate("/History")}
-  className="flex h-24 flex-1 cursor-pointer flex-col items-start justify-between rounded-2xl bg-accent-blue-400 p-3 font-bold text-surface-card hover:bg-accent-blue-600"
->
-  <FaBars />
+            type="button"
+            onClick={() => navigate("/shopping-list")}
+            className="flex h-24 flex-1 cursor-pointer flex-col items-start justify-between rounded-2xl bg-accent-blue-400 p-3 font-bold text-surface-card hover:bg-accent-blue-600"
+          >
+            <FaBars />
 
-  <p className="text-left leading-tight">
-    Registrar
-    <br />
-    consumo
-  </p>
-</button>
+            <p className="text-left leading-tight">
+              Registrar
+              <br />
+              consumo
+            </p>
+          </button>
         </div>
 
         {/* POR CATEGORIA */}

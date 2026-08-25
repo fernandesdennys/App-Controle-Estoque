@@ -33,10 +33,7 @@ export async function getCatalogoProdutos(): Promise<Produto[]> {
   return response.data;
 }
 
-/* export async function getProdutosDisponiveis(): Promise<Produto[]> {
-  return getCatalogoProdutos();
-}
- */
+
 
 export async function getProdutosDisponiveis(): Promise<Produto[]> {
   const response = await httpClient.get("/produtos/disponiveis");
