@@ -45,13 +45,6 @@ public class ListaCompraService {
     private ListaCompraMapper mapper;
 
 
-    // ============================================================
-    // GERAR LISTA DE COMPRAS
-    // ============================================================
-    //
-    // POST /listas/gerar
-    // ============================================================
-
     @Transactional
     public ListaCompraDTO gerar(ListaCompraGerarDTO dto) {
 
@@ -118,14 +111,6 @@ public class ListaCompraService {
         return mapper.toDTO(lista);
     }
 
-
-    // ============================================================
-    // ATUALIZAR ITEM DA LISTA
-    // ============================================================
-    //
-    // PATCH /listas/{id}/itens/{itemId}
-    // ============================================================
-
     @Transactional
     public ListaCompraDTO atualizarItem(
             Integer listaId,
@@ -165,26 +150,6 @@ public class ListaCompraService {
         return buscarPorId(listaId);
     }
 
-
-    // ============================================================
-    // FINALIZAR LISTA DE COMPRAS
-    // ============================================================
-    //
-    // POST /listas/{id}/finalizar
-    //
-    // Ao finalizar:
-    //
-    // 1. Pega os produtos comprados.
-    //
-    // 2. Soma a quantidade comprada ao estoque.
-    //
-    // 3. Reativa o produto caso ele estivesse fora do estoque.
-    //
-    // 4. Registra a movimentação de entrada.
-    //
-    // 5. Finaliza a lista.
-    // ============================================================
-
     @Transactional
     public ListaCompraDTO finalizar(Integer id) {
 
@@ -219,17 +184,6 @@ public class ListaCompraService {
 
             Produto produto = item.getProduto();
 
-            // ====================================================
-            // 1. ADICIONA A QUANTIDADE AO ESTOQUE
-            // ====================================================
-            //
-            // O Repository faz:
-            //
-            // quantidadeAtual + quantidade
-            //
-            // Além disso, coloca ativo = true.
-            // ====================================================
-
             int resultado =
                     produtoRepository.adicionarEntrada(
                             produto.getId(),
@@ -244,11 +198,6 @@ public class ListaCompraService {
                                 + produto.getId()
                 );
             }
-
-
-            // ====================================================
-            // 2. REGISTRA A MOVIMENTAÇÃO
-            // ====================================================
 
             Movimentacao movimentacao =
                     new Movimentacao();
@@ -272,10 +221,6 @@ public class ListaCompraService {
         }
 
 
-        // ========================================================
-        // 3. FINALIZA A LISTA
-        // ========================================================
-
         int linhasAfetadas =
                 listaCompraRepository.finalizar(
                         id,
@@ -296,13 +241,6 @@ public class ListaCompraService {
     }
 
 
-    // ============================================================
-    // CANCELAR LISTA
-    // ============================================================
-    //
-    // POST /listas/{id}/cancelar
-    // ============================================================
-
     @Transactional
     public ListaCompraDTO cancelar(Integer id) {
 
@@ -320,10 +258,6 @@ public class ListaCompraService {
         return buscarPorId(id);
     }
 
-
-    // ============================================================
-    // LISTAR LISTAS
-    // ============================================================
 
     @Transactional(readOnly = true)
     public List<ListaCompraDTO> listar(

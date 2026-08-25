@@ -14,7 +14,6 @@ import java.util.Optional;
 
 public interface ListaCompraRepository extends JpaRepository<ListaCompra, Integer> {
 
-    // GET /listas/{id} — JOIN FETCH em itens + produto pra evitar N+1 na serialização
     @Query("""
                 SELECT DISTINCT l FROM ListaCompra l
                 LEFT JOIN FETCH l.itens i
@@ -23,7 +22,6 @@ public interface ListaCompraRepository extends JpaRepository<ListaCompra, Intege
             """)
     Optional<ListaCompra> buscarPorIdComItens(@Param("id") Integer id);
 
-    // POST /listas/{id}/finalizar
     @Modifying
     @Transactional
     @Query("""

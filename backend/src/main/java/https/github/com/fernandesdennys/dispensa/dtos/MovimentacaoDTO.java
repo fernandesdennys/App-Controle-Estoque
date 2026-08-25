@@ -9,17 +9,27 @@ import java.time.LocalDateTime;
 public record MovimentacaoDTO(
 
         Long id,
+
         Integer produtoId,
+
+        String produtoNome,
+
         TipoMovimentacao tipo,
+
         BigDecimal quantidade,
+
         String observacao,
+
         LocalDateTime criadoEm
 
 ) {
+
     public MovimentacaoDTO(Movimentacao entity) {
+
         this(
                 entity.getId(),
                 entity.getProduto().getId(),
+                entity.getProduto().getNome(),
                 entity.getTipo(),
                 entity.getQuantidade(),
                 entity.getObservacao(),

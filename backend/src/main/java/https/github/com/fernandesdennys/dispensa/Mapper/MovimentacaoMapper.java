@@ -9,8 +9,6 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface MovimentacaoMapper {
 
-    // produto, tipo e criadoEm são setados manualmente pelo Service —
-    // não vêm do DTO de request (criadoEm é @CreatedDate, preenchido pela auditoria)
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "produto", ignore = true)
     @Mapping(target = "tipo", ignore = true)

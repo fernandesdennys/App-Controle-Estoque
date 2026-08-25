@@ -35,7 +35,7 @@ public interface ListaCompraItemRepository extends JpaRepository<ListaCompraItem
             @Param("comprado") Boolean comprado
     );
 
-    // usado no finalizar — pega todos os itens marcados como comprados pra dar entrada no estoque
+
     @Query("""
                 SELECT i FROM ListaCompraItem i
                 JOIN FETCH i.produto

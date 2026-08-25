@@ -12,7 +12,9 @@ import https.github.com.fernandesdennys.dispensa.repositories.MovimentacaoReposi
 import https.github.com.fernandesdennys.dispensa.repositories.ProdutoRepository;
 import https.github.com.fernandesdennys.dispensa.utils.OrdenacaoWhitelist;
 import https.github.com.fernandesdennys.dispensa.utils.PaginacaoUtil;
+
 import jakarta.persistence.EntityNotFoundException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -57,14 +59,6 @@ public class MovimentacaoService {
             );
         }
 
-        /*
-         * Se o produto estiver inativo:
-         *
-         * - reativa o produto
-         * - soma a quantidade recebida
-         *
-         * O método adicionarEntrada() já faz as duas coisas.
-         */
         if (!produto.getAtivo()) {
 
             int linhasAfetadas =
@@ -82,11 +76,6 @@ public class MovimentacaoService {
 
         } else {
 
-            /*
-             * Produto já está ativo.
-             *
-             * Apenas soma a nova entrada à quantidade atual.
-             */
             BigDecimal quantidadeNova =
                     produto.getQuantidadeAtual()
                             .add(dto.quantidade());
@@ -106,9 +95,6 @@ public class MovimentacaoService {
             }
         }
 
-        /*
-         * Registra a movimentação no histórico.
-         */
         Movimentacao movimentacao =
                 mapper.toEntity(dto);
 
@@ -184,7 +170,7 @@ public class MovimentacaoService {
 
 
     // ============================================================
-    // HISTÓRICO
+    // HISTÓRICO DE UM PRODUTO
     // ============================================================
 
     @Transactional(readOnly = true)
@@ -198,9 +184,40 @@ public class MovimentacaoService {
 
         buscarProdutoAtivo(produtoId);
 
-        String colunaSegura =
-                OrdenacaoWhitelist
-                        .resolverMovimentacao(ordenarPor);
+        int pageClamped =
+                PaginacaoUtil.clampPage(page);
+
+        int sizeClamped =
+                PaginacaoUtil.clampSize(size);
+
+        Pageable pageable =
+                PageRequest.of(
+                        pageClamped,
+                        sizeClamped
+                );
+
+        return movimentacaoRepository
+                .buscarPorProduto(
+                        produtoId,
+                        tipo,
+                        pageable
+                )
+                .map(mapper::toDTO);
+    }
+
+
+    // ============================================================
+    // HISTÓRICO GERAL
+    //
+    // Busca movimentações de todos os produtos.
+    // ============================================================
+
+    @Transactional(readOnly = true)
+    public Page<MovimentacaoDTO> historicoGeral(
+            TipoMovimentacao tipo,
+            Integer page,
+            Integer size
+    ) {
 
         int pageClamped =
                 PaginacaoUtil.clampPage(page);
@@ -211,15 +228,12 @@ public class MovimentacaoService {
         Pageable pageable =
                 PageRequest.of(
                         pageClamped,
-                        sizeClamped,
-                        Sort.unsorted()
+                        sizeClamped
                 );
 
         return movimentacaoRepository
-                .buscarPorProduto(
-                        produtoId,
+                .buscarHistoricoGeral(
                         tipo,
-                        colunaSegura,
                         pageable
                 )
                 .map(mapper::toDTO);
@@ -238,6 +252,14 @@ public class MovimentacaoService {
 
         Produto produto =
                 buscarProdutoAtivo(produtoId);
+
+        if (dto.quantidade() == null ||
+                dto.quantidade().compareTo(BigDecimal.ZERO) <= 0) {
+
+            throw new IllegalArgumentException(
+                    "A quantidade deve ser maior que zero"
+            );
+        }
 
         BigDecimal resultante =
                 produto.getQuantidadeAtual()
@@ -263,7 +285,7 @@ public class MovimentacaoService {
 
 
     // ============================================================
-    // APLICA MOVIMENTAÇÃO
+    // APLICAR MOVIMENTAÇÃO
     // ============================================================
 
     private MovimentacaoDTO aplicarMovimentacao(
@@ -303,11 +325,6 @@ public class MovimentacaoService {
 
     // ============================================================
     // BUSCAR PRODUTO
-    //
-    // Busca produtos ativos E inativos.
-    //
-    // É necessário para permitir entrada em um produto
-    // que foi removido do estoque.
     // ============================================================
 
     private Produto buscarProduto(Integer produtoId) {
@@ -317,7 +334,6 @@ public class MovimentacaoService {
             Produto produto =
                     produtoRepository.getReferenceById(produtoId);
 
-            // Força a inicialização do proxy.
             produto.getNome();
 
             return produto;
@@ -334,12 +350,6 @@ public class MovimentacaoService {
 
     // ============================================================
     // BUSCAR PRODUTO ATIVO
-    //
-    // Usado para:
-    // - consumo
-    // - descarte
-    // - ajuste
-    // - histórico
     // ============================================================
 
     private Produto buscarProdutoAtivo(Integer produtoId) {
@@ -349,7 +359,6 @@ public class MovimentacaoService {
             Produto produto =
                     produtoRepository.getReferenceById(produtoId);
 
-            // Força a inicialização do proxy.
             produto.getNome();
 
             if (!produto.getAtivo()) {
