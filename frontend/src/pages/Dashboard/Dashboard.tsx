@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import BottomNavigation from "../../components/layout/Footer/BottomNavigation";
 import Header from "../../components/layout/Header/Header";
+import Sidebar from "../../components/layout/Sidebar/Sidebar";
 import { FaPlus, FaBars } from "react-icons/fa";
 import CategoryCard from "../../components/ui/CategoryCard/CategoryCard";
 import NovaEntradaModal from "../../components/modals/NovaEntradaModal/NovaEntradaModal";
@@ -11,40 +12,68 @@ import { getCategoriasResumo } from "../../services/categoryService";
 import { registrarEntrada } from "../../services/movementService";
 import { useNavigate } from "react-router-dom";
 
+interface Usuario {
+  id?: number;
+  nome?: string;
+  sobrenome?: string;
+}
+
 function Dashboard() {
+  const navigate = useNavigate();
+
+  // ============================================================
+  // DATA
+  // ============================================================
+
   const dataAtual = new Date();
+
   const dias = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
   const meses = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+
   const dataFormatada = `${dias[dataAtual.getDay()]}, ${dataAtual.getDate()} ${meses[dataAtual.getMonth()]}`;
+
+  // ============================================================
+  // USUÁRIO LOGADO
+  // ============================================================
+
+  let usuario: Usuario = {};
+
+  try {
+    const usuarioSalvo = localStorage.getItem("usuario");
+
+    if (usuarioSalvo) {
+      const dados = JSON.parse(usuarioSalvo);
+
+      usuario = dados.usuario ?? dados;
+    }
+  } catch (error) {
+    console.error("Erro ao recuperar usuário:", error);
+  }
+
+  const nome = usuario.nome?.trim() || "";
+  const sobrenome = usuario.sobrenome?.trim() || "";
+
+  const nomeCompleto = `${nome} ${sobrenome}`.trim();
 
   // ============================================================
   // PRODUTOS
   // ============================================================
-  const navigate = useNavigate();
 
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [carregandoProdutos, setCarregandoProdutos] = useState(true);
   const [erroProdutos, setErroProdutos] = useState<string | null>(null);
+
   const produtosEmEstoque = produtos.filter((produto) => produto.quantidadeAtual > 0);
 
   // ============================================================
-  // PRODUTOS DISPONÍVEIS (PARA O MODAL DE NOVA ENTRADA)
-  // ============================================================
-  //
-  // Usamos o CATÁLOGO COMPLETO (getCatalogoProdutos), não a lista
-  // de produtos ativos do estoque. O modal precisa permitir tanto
-  // reforçar a quantidade de um produto já ativo quanto reativar
-  // um produto que foi removido do estoque (ativo = false) — por
-  // isso a lista não pode ser filtrada por "ativo".
-  //
-  // Carregada sob demanda, sempre que o modal é aberto (veja
-  // abrirModalEntrada), para nunca ficar desatualizada caso o
-  // usuário tenha alterado produtos em outra tela (ex: Estoque)
-  // antes de voltar ao Dashboard sem recarregar a página.
+  // PRODUTOS DISPONÍVEIS
   // ============================================================
 
   const [produtosDisponiveis, setProdutosDisponiveis] = useState<Produto[]>([]);
+
   const [carregandoProdutosDisponiveis, setCarregandoProdutosDisponiveis] = useState(false);
+
   const [erroProdutosDisponiveis, setErroProdutosDisponiveis] = useState<string | null>(null);
 
   // ============================================================
@@ -142,10 +171,6 @@ function Dashboard() {
   // ============================================================
   // MODAL
   // ============================================================
-  //
-  // Busca produtosDisponiveis sempre que o modal é aberto,
-  // garantindo dados sempre atualizados (ver comentário acima).
-  // ============================================================
 
   async function abrirModalEntrada() {
     setModalEntradaAberto(true);
@@ -155,9 +180,11 @@ function Dashboard() {
       setErroProdutosDisponiveis(null);
 
       const dados = await getCatalogoProdutos();
+
       setProdutosDisponiveis(dados);
     } catch (error) {
       const mensagem = error instanceof Error ? error.message : "Não foi possível carregar os produtos disponíveis.";
+
       setErroProdutosDisponiveis(mensagem);
     } finally {
       setCarregandoProdutosDisponiveis(false);
@@ -204,168 +231,202 @@ function Dashboard() {
 
   return (
     <div id="dashboard" className="flex min-h-screen flex-col">
-      <main id="dashboard-main" className="flex-1 bg-linear-to-b from-brand-100 to-brand-50 pb-24">
+      <Sidebar />
+
+      <main id="dashboard-main" className="flex-1 bg-linear-to-b from-brand-100 to-brand-50 pb-24 md:ml-64 md:pb-10 md:pt-4 md:pr-4 md:pl-4">
         <span id="dashboard-breadcrumb" className="pb-1 font-bold text-brand-900">
           1. Início
         </span>
 
-        {/* HEADER SEM BOTÃO + */}
+        {/* =====================================================
+            HEADER
+        ====================================================== */}
 
         <Header produtos={produtos} />
 
-        {/* SAUDAÇÃO */}
+        <div className="mx-auto max-w-5xl md:px-8">
+          {/* =====================================================
+              SAUDAÇÃO
+          ====================================================== */}
 
-        <div id="dashboard-welcome" className="my-3 flex items-center justify-around">
-          <h1 id="dashboard-greeting" className="text-[22px] font-extrabold text-brand-900">
-            Olá, Família Souza
-          </h1>
-
-          <span id="dashboard-date" className="mt-2 text-[12px] font-bold text-brand-500">
-            {dataFormatada}
-          </span>
-        </div>
-
-        {/* PRECISA DE ATENÇÃO */}
-
-        <div className="mx-5 flex justify-between pb-3">
-          <div id="attention-title-container">
-            <h1 id="attention-title" className="font-bold">
-              Precisa de atenção
+          <div id="dashboard-welcome" className="my-3 flex items-center justify-around md:hidden">
+            <h1 id="dashboard-greeting" className="text-[22px] font-extrabold text-brand-900">
+              Olá, {nomeCompleto || "Usuário"}
             </h1>
+
+            <span id="dashboard-date" className="mt-2 text-[12px] font-bold text-brand-500">
+              {dataFormatada}
+            </span>
           </div>
 
-          <div id="attention-count-container">
-            <p
-              id="attention-count"
-              className="flex w-15 justify-center rounded-2xl bg-danger-100 px-1 text-[14px] font-bold text-danger-400"
-            >
-              {produtosAtencao.length} {produtosAtencao.length === 1 ? "item" : "itens"}
-            </p>
-          </div>
-        </div>
+          {/* =====================================================
+              GRID PRINCIPAL (desktop)
+          ====================================================== */}
 
-        {/* LISTA DE PRODUTOS */}
+          <div className="md:grid md:grid-cols-3 md:gap-6 md:pt-6">
+            {/* ------------------------------------------------
+                COLUNA ESQUERDA — PRECISA DE ATENÇÃO
+            ------------------------------------------------ */}
 
-        <div id="attention-section" className="mx-5">
-          <div id="attention-product-list" className="rounded-2xl bg-white p-3 shadow-sm">
-            {carregandoProdutos && <p className="text-ink-500 py-2 text-center text-sm">Carregando estoque...</p>}
+            <div className="md:col-span-2">
+              <div className="mx-5 flex justify-between pb-3 md:mx-0">
+                <div id="attention-title-container">
+                  <h1 id="attention-title" className="font-bold">
+                    Precisa de atenção
+                  </h1>
+                </div>
 
-            {!carregandoProdutos && erroProdutos && (
-              <p className="py-2 text-center text-sm text-danger-500">{erroProdutos}</p>
-            )}
-
-            {!carregandoProdutos && !erroProdutos && produtosAtencao.length === 0 && (
-              <p className="text-ink-500 py-2 text-center text-sm">Nenhum produto precisa de atenção.</p>
-            )}
-
-            {!carregandoProdutos &&
-              !erroProdutos &&
-              produtosAtencao.map((produto) => {
-                const status = obterStatus(produto);
-
-                return (
-                  <div
-                    id={`attention-product-${produto.id}`}
-                    key={produto.id}
-                    className="grid grid-cols-[40px_1fr_auto] items-center gap-3 py-2 first:pt-0 last:pb-0"
+                <div id="attention-count-container">
+                  <p
+                    id="attention-count"
+                    className="flex w-15 justify-center rounded-2xl bg-danger-100 px-1 text-[14px] font-bold text-danger-400"
                   >
-                    <div
-                      id={`product-icon-${produto.id}`}
-                      className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 text-xs font-bold text-purple-700"
-                    >
-                      {produto.nome.substring(0, 2).toUpperCase()}
-                    </div>
+                    {produtosAtencao.length} {produtosAtencao.length === 1 ? "item" : "itens"}
+                  </p>
+                </div>
+              </div>
 
-                    <div id={`product-info-${produto.id}`}>
-                      <h2 className="text-[14px] leading-tight font-bold">{produto.nome}</h2>
+              <div id="attention-section" className="mx-5 md:mx-0">
+                <div id="attention-product-list" className="rounded-2xl bg-white p-3 shadow-sm">
+                  {carregandoProdutos && <p className="text-ink-500 py-2 text-center text-sm">Carregando estoque...</p>}
 
-                      <p className="text-[10px] text-gray-500">
-                        Estoque: {produto.quantidadeAtual} {produto.unidade} · mín: {produto.quantidadeMinima}
-                      </p>
-                    </div>
+                  {!carregandoProdutos && erroProdutos && (
+                    <p className="py-2 text-center text-sm text-danger-500">{erroProdutos}</p>
+                  )}
 
-                    <div
-                      id={`product-status-${produto.id}`}
-                      className={`rounded-2xl px-3 py-1 text-xs font-bold whitespace-nowrap ${
-                        statusStyles[status as keyof typeof statusStyles]
-                      }`}
-                    >
-                      {status}
-                    </div>
+                  {!carregandoProdutos && !erroProdutos && produtosAtencao.length === 0 && (
+                    <p className="text-ink-500 py-2 text-center text-sm">Nenhum produto precisa de atenção.</p>
+                  )}
+
+                  {!carregandoProdutos &&
+                    !erroProdutos &&
+                    produtosAtencao.map((produto) => {
+                      const status = obterStatus(produto);
+
+                      return (
+                        <div
+                          id={`attention-product-${produto.id}`}
+                          key={produto.id}
+                          className="grid grid-cols-[40px_1fr_auto] items-center gap-3 py-2 first:pt-0 last:pb-0"
+                        >
+                          <div
+                            id={`product-icon-${produto.id}`}
+                            className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 text-xs font-bold text-purple-700"
+                          >
+                            {produto.nome.substring(0, 2).toUpperCase()}
+                          </div>
+
+                          <div id={`product-info-${produto.id}`}>
+                            <h2 className="text-[14px] leading-tight font-bold">{produto.nome}</h2>
+
+                            <p className="text-[10px] text-gray-500">
+                              Estoque: {produto.quantidadeAtual} {produto.unidade} · mín: {produto.quantidadeMinima}
+                            </p>
+                          </div>
+
+                          <div
+                            id={`product-status-${produto.id}`}
+                            className={`rounded-2xl px-3 py-1 text-xs font-bold whitespace-nowrap ${
+                              statusStyles[status as keyof typeof statusStyles]
+                            }`}
+                          >
+                            {status}
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+
+              {/* =====================================================
+                  LISTA DE COMPRAS
+              ====================================================== */}
+
+              <div id="attention-actions">
+                <button
+                  type="button"
+                  onClick={() => navigate("/shopping-list")}
+                  className="m-auto mt-3 flex w-[90%] cursor-pointer items-center justify-center rounded-full border bg-brand-100 py-2 font-bold text-brand-800 hover:bg-brand-200 hover:shadow-sm md:mx-0 md:w-full"
+                >
+                  Ver lista de compras
+                </button>
+              </div>
+            </div>
+
+            {/* ------------------------------------------------
+                COLUNA DIREITA — AÇÕES + CATEGORIAS (desktop)
+            ------------------------------------------------ */}
+
+            <div className="md:col-span-1">
+              {/* =====================================================
+                  AÇÕES
+              ====================================================== */}
+
+              <div className="mx-2 my-4 flex gap-2 md:mx-0 md:mt-0 md:flex-col">
+                <button
+                  type="button"
+                  onClick={abrirModalEntrada}
+                  className="text=[12px] flex h-24 flex-1 cursor-pointer flex-col items-start justify-between rounded-2xl bg-accent-lime-300 p-3 font-bold text-ink-900 hover:bg-accent-lime-500"
+                >
+                  <FaPlus />
+
+                  <p className="text-left leading-tight">
+                    Nova entrada
+                    <br />
+                    no estoque
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => navigate("/shopping-list")}
+                  className="flex h-24 flex-1 cursor-pointer flex-col items-start justify-between rounded-2xl bg-accent-blue-400 p-3 font-bold text-surface-card hover:bg-accent-blue-600"
+                >
+                  <FaBars />
+
+                  <p className="text-left leading-tight">
+                    Registrar
+                    <br />
+                    consumo
+                  </p>
+                </button>
+              </div>
+
+              {/* =====================================================
+                  POR CATEGORIA
+              ====================================================== */}
+
+              <div className="font-bold text-ink-900">
+                <h1 className="mx-3 md:mx-0">Por categoria</h1>
+
+                <div className="mx-2 my-4 overflow-x-auto pb-3 md:mx-0 md:overflow-visible">
+                  <div className="flex gap-2 md:grid md:grid-cols-1 md:gap-3">
+                    {carregandoCategorias && <p className="text-ink-500 text-sm">Carregando categorias...</p>}
+
+                    {!carregandoCategorias && erroCategorias && (
+                      <p className="text-sm text-danger-500">{erroCategorias}</p>
+                    )}
+
+                    {!carregandoCategorias && !erroCategorias && categorias.length === 0 && (
+                      <p className="text-ink-500 text-sm">Nenhuma categoria precisa de atenção.</p>
+                    )}
+
+                    {!carregandoCategorias &&
+                      !erroCategorias &&
+                      categorias.map((categoria) => <CategoryCard key={categoria.id} categoria={categoria} />)}
                   </div>
-                );
-              })}
-          </div>
-        </div>
-
-        {/* LISTA DE COMPRAS */}
-
-        <div id="attention-actions">
-          <button
-            type="button"
-            onClick={() => navigate("/shopping-list")}
-            className="m-auto mt-3 flex w-[90%] cursor-pointer items-center justify-center rounded-full border bg-brand-100 py-2 font-bold text-brand-800 hover:bg-brand-200 hover:shadow-sm"
-          >
-            Ver lista de compras
-          </button>
-        </div>
-
-        {/* AÇÕES */}
-
-        <div className="mx-2 my-4 flex gap-2">
-          <button
-            type="button"
-            onClick={abrirModalEntrada}
-            className="text=[12px] flex h-24 flex-1 cursor-pointer flex-col items-start justify-between rounded-2xl bg-accent-lime-300 p-3 font-bold text-ink-900 hover:bg-accent-lime-500"
-          >
-            <FaPlus />
-
-            <p className="text-left leading-tight">
-              Nova entrada
-              <br />
-              no estoque
-            </p>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => navigate("/shopping-list")}
-            className="flex h-24 flex-1 cursor-pointer flex-col items-start justify-between rounded-2xl bg-accent-blue-400 p-3 font-bold text-surface-card hover:bg-accent-blue-600"
-          >
-            <FaBars />
-
-            <p className="text-left leading-tight">
-              Registrar
-              <br />
-              consumo
-            </p>
-          </button>
-        </div>
-
-        {/* POR CATEGORIA */}
-
-        <div className="font-bold text-ink-900">
-          <h1 className="mx-3">Por categoria</h1>
-
-          <div className="mx-2 my-4 overflow-x-auto pb-3">
-            <div className="flex gap-2">
-              {carregandoCategorias && <p className="text-ink-500 text-sm">Carregando categorias...</p>}
-
-              {!carregandoCategorias && erroCategorias && <p className="text-sm text-danger-500">{erroCategorias}</p>}
-
-              {!carregandoCategorias && !erroCategorias && categorias.length === 0 && (
-                <p className="text-ink-500 text-sm">Nenhuma categoria precisa de atenção.</p>
-              )}
-
-              {!carregandoCategorias &&
-                !erroCategorias &&
-                categorias.map((categoria) => <CategoryCard key={categoria.id} categoria={categoria} />)}
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </main>
 
       <BottomNavigation />
+
+      {/* =====================================================
+          MODAL NOVA ENTRADA
+      ====================================================== */}
 
       <NovaEntradaModal
         aberto={modalEntradaAberto}

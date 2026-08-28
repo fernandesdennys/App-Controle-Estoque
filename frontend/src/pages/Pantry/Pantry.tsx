@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Header from "../../components/layout/Header/Header";
 import BottomNavgation from "../../components/layout/Footer/BottomNavigation";
+import Sidebar from "../../components/layout/Sidebar/Sidebar";
 import ProductList from "../../components/products/ProductList";
 import { FaSearch } from "react-icons/fa";
 
@@ -22,9 +23,6 @@ function Pantry() {
   const [salvandoId, setSalvandoId] = useState<number | null>(null);
   const [erro, setErro] = useState("");
 
-  /*
-   * Carrega produtos e categorias.
-   */
   useEffect(() => {
     async function carregarDados() {
       try {
@@ -49,28 +47,16 @@ function Pantry() {
     carregarDados();
   }, []);
 
-  /*
-   * Filtra os produtos pela categoria e pela busca.
-   */
   const produtosFiltrados = useMemo(() => {
     return produtos.filter((produto) => {
-      /*
-       * Filtro por categoria.
-       */
       const pertenceCategoria = categoriaSelecionada === null || produto.categoriaId === categoriaSelecionada;
 
-      /*
-       * Filtro por nome.
-       */
       const correspondeBusca = produto.nome.toLowerCase().includes(busca.toLowerCase());
 
       return pertenceCategoria && correspondeBusca;
     });
   }, [produtos, categoriaSelecionada, busca]);
 
-  /*
-   * Altera a quantidade do produto.
-   */
   async function alterarQuantidade(produto: Produto, tipo: "ENTRADA" | "SAIDA") {
     if (salvandoId !== null) {
       return;
@@ -94,16 +80,10 @@ function Pantry() {
         await registrarConsumo(produto.id, dados);
       }
 
-      /*
-       * Busca os produtos novamente no backend.
-       */
       const produtosAtualizados = await getProdutos();
 
       const produtoAtualizado = produtosAtualizados.find((item) => item.id === produto.id) ?? null;
 
-      /*
-       * Atualiza somente o produto alterado.
-       */
       if (produtoAtualizado) {
         setProdutos((produtosAtuais) =>
           produtosAtuais.map((item) => (item.id === produtoAtualizado.id ? produtoAtualizado : item))
@@ -120,9 +100,6 @@ function Pantry() {
     }
   }
 
-  /*
-   * Remove o produto do estoque.
-   */
   async function removerProduto(produto: Produto) {
     if (salvandoId !== null) {
       return;
@@ -132,14 +109,8 @@ function Pantry() {
       setErro("");
       setSalvandoId(produto.id);
 
-      /*
-       * Remove o produto no backend.
-       */
       await deletarProduto(produto.id);
 
-      /*
-       * Remove o produto da lista local.
-       */
       setProdutos((produtosAtuais) => produtosAtuais.filter((item) => item.id !== produto.id));
     } catch (error) {
       if (error instanceof Error) {
@@ -152,16 +123,6 @@ function Pantry() {
     }
   }
 
-  /*
-   * Retorna as iniciais da categoria.
-   *
-   * Exemplos:
-   *
-   * Mercearia -> ME
-   * Limpeza -> LI
-   * Higiene -> HI
-   * Produtos de Limpeza -> PL
-   */
   function obterIniciaisCategoria(nome: string) {
     const palavras = nome.trim().split(/\s+/).filter(Boolean);
 
@@ -178,88 +139,92 @@ function Pantry() {
 
   return (
     <div className="min-h-screen">
-      <main className="bg-linear-to-b from-brand-200 to-brand-100 pb-24">
+      <Sidebar />
+
+      <main className="flex-1 bg-linear-to-b from-brand-100 to-brand-50 pb-24 md:ml-64 md:pb-10 md:pt-4 md:pr-4 md:pl-4">
         <span className="pb-1 font-bold text-brand-900">2. Estoque</span>
 
         <Header produtos={produtos} />
 
-        {/* =====================================================
-            BUSCA
-        ====================================================== */}
+        <div className="mx-auto max-w-5xl md:px-8">
+          {/* =====================================================
+              BUSCA
+          ====================================================== */}
 
-        <div className="mx-3 mt-3 flex items-center rounded-[21px] border border-ink-400 bg-transparent px-3">
-          <FaSearch className="shrink-0 text-ink-400" />
+          <div className="mx-3 mt-3 flex items-center rounded-[21px] border border-ink-400 bg-transparent px-3 md:mx-0 md:max-w-md">
+            <FaSearch className="shrink-0 text-ink-400" />
 
-          <input
-            type="text"
-            value={busca}
-            onChange={(event) => setBusca(event.target.value)}
-            placeholder="Buscar produto"
-            className="w-full bg-transparent py-2 pl-2 outline-none"
-          />
-        </div>
+            <input
+              type="text"
+              value={busca}
+              onChange={(event) => setBusca(event.target.value)}
+              placeholder="Buscar produto"
+              className="w-full bg-transparent py-2 pl-2 outline-none"
+            />
+          </div>
 
-        {/* =====================================================
-            CATEGORIAS
-        ====================================================== */}
+          {/* =====================================================
+              CATEGORIAS
+          ====================================================== */}
 
-        <div className="scrollbar-hover mx-2 my-4 overflow-x-auto pb-2">
-          <div className="flex w-max gap-2">
-            {/* TODOS */}
+          <div className="scrollbar-hover mx-2 my-4 overflow-x-auto pb-2 md:mx-0">
+            <div className="flex w-max gap-2">
+              {/* TODOS */}
 
-            <button
-              type="button"
-              onClick={() => setCategoriaSelecionada(null)}
-              className={`cursor-pointer rounded-full px-5 py-2 text-[12px] font-bold transition hover:bg-brand-900 hover:text-white ${
-                categoriaSelecionada === null ? "bg-brand-900 text-white" : "text-ink-500 bg-white"
-              }`}
-            >
-              Todos
-            </button>
-
-            {/* CATEGORIAS */}
-
-            {categorias.map((categoria) => (
               <button
-                key={categoria.id}
                 type="button"
-                onClick={() => setCategoriaSelecionada(categoria.id)}
-                className={`cursor-pointer rounded-full px-5 py-2 text-[12px] font-bold whitespace-nowrap transition hover:bg-brand-900 hover:text-white ${
-                  categoriaSelecionada === categoria.id ? "bg-brand-900 text-white" : "text-ink-500 bg-white"
+                onClick={() => setCategoriaSelecionada(null)}
+                className={`cursor-pointer rounded-full px-5 py-2 text-[12px] font-bold transition hover:bg-brand-900 hover:text-white ${
+                  categoriaSelecionada === null ? "bg-brand-900 text-white" : "text-ink-500 bg-white"
                 }`}
               >
-                {categoria.nome}
+                Todos
               </button>
-            ))}
+
+              {/* CATEGORIAS */}
+
+              {categorias.map((categoria) => (
+                <button
+                  key={categoria.id}
+                  type="button"
+                  onClick={() => setCategoriaSelecionada(categoria.id)}
+                  className={`cursor-pointer rounded-full px-5 py-2 text-[12px] font-bold whitespace-nowrap transition hover:bg-brand-900 hover:text-white ${
+                    categoriaSelecionada === categoria.id ? "bg-brand-900 text-white" : "text-ink-500 bg-white"
+                  }`}
+                >
+                  {categoria.nome}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {/* =====================================================
+              CARREGANDO
+          ====================================================== */}
+
+          {carregando && <p className="text-ink-500 mt-4 text-center text-sm">Carregando produtos...</p>}
+
+          {/* =====================================================
+              ERRO
+          ====================================================== */}
+
+          {erro && <p className="mt-4 text-center text-sm text-red-600">{erro}</p>}
+
+          {/* =====================================================
+              LISTA
+          ====================================================== */}
+
+          {!carregando && !erro && (
+            <ProductList
+              produtos={produtosFiltrados}
+              categorias={categorias}
+              onAlterarQuantidade={alterarQuantidade}
+              onRemoverProduto={removerProduto}
+              salvandoId={salvandoId}
+              obterIniciaisCategoria={obterIniciaisCategoria}
+            />
+          )}
         </div>
-
-        {/* =====================================================
-            CARREGANDO
-        ====================================================== */}
-
-        {carregando && <p className="text-ink-500 mt-4 text-center text-sm">Carregando produtos...</p>}
-
-        {/* =====================================================
-            ERRO
-        ====================================================== */}
-
-        {erro && <p className="mt-4 text-center text-sm text-red-600">{erro}</p>}
-
-        {/* =====================================================
-            LISTA
-        ====================================================== */}
-
-        {!carregando && !erro && (
-          <ProductList
-            produtos={produtosFiltrados}
-            categorias={categorias}
-            onAlterarQuantidade={alterarQuantidade}
-            onRemoverProduto={removerProduto}
-            salvandoId={salvandoId}
-            obterIniciaisCategoria={obterIniciaisCategoria}
-          />
-        )}
       </main>
 
       <BottomNavgation />

@@ -53,8 +53,6 @@
   --radius-xl: 1rem;
   --radius-2xl: 1.25rem;
   --radius-3xl: 1.75rem;
-
-  
 }
 
 .scrollbar-hover {
@@ -103,4 +101,15 @@ html::-webkit-scrollbar-thumb {
 
 html:hover::-webkit-scrollbar-thumb {
   background: #999;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  min-height: 100vh;
+  background: linear-gradient(to bottom, var(--color-brand-100), var(--color-brand-50));
 }

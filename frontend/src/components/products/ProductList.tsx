@@ -6,16 +6,9 @@ import ProductCard from "./ProductCard";
 interface ProductListProps {
   produtos: Produto[];
   categorias: Categoria[];
-
-  onAlterarQuantidade: (
-    produto: Produto,
-    tipo: "ENTRADA" | "SAIDA"
-  ) => void;
-
+  onAlterarQuantidade: (produto: Produto, tipo: "ENTRADA" | "SAIDA") => void;
   onRemoverProduto: (produto: Produto) => void;
-
   salvandoId: number | null;
-
   obterIniciaisCategoria: (nome: string) => string;
 }
 
@@ -29,18 +22,16 @@ function ProductList({
 }: ProductListProps) {
   if (produtos.length === 0) {
     return (
-      <div className="mx-3 mt-3 rounded-2xl bg-white p-4 text-center text-sm text-ink-500">
+      <div className="text-ink-500 mx-3 mt-3 rounded-2xl bg-white p-4 text-center text-sm md:mx-0">
         Nenhum produto encontrado.
       </div>
     );
   }
 
   return (
-    <div className="mt-3 flex flex-col gap-2">
+    <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-3 lg:grid-cols-3">
       {produtos.map((produto) => {
-        const categoria = categorias.find(
-          (item) => item.id === produto.categoriaId
-        );
+        const categoria = categorias.find((item) => item.id === produto.categoriaId);
 
         return (
           <ProductCard

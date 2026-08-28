@@ -23,24 +23,16 @@ function CategoryCard({ categoria }: CategoryCardProps) {
 
   return (
     <div
-      className="shrink-0 rounded-2xl bg-white p-3"
-      style={{
-        width: "calc((100% - 8px) / 2)",
-      }}
+      className="shrink-0 rounded-2xl bg-white p-3 md:w-full md:shrink md:p-4"
+      style={{ width: "calc((100% - 8px) / 2)" }}
     >
       <div className="flex items-center justify-between gap-2">
         <p className="truncate text-[13px] font-bold text-ink-900">{categoria.nome}</p>
-
         <span className="text-ink-500 shrink-0 text-[12px]">{categoria.quantidade}</span>
       </div>
 
       <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-200">
-        <div
-          className={`h-full rounded-full ${cor}`}
-          style={{
-            width: `${categoria.porcentagem}%`,
-          }}
-        />
+        <div className={`h-full rounded-full ${cor}`} style={{ width: `${categoria.porcentagem}%` }} />
       </div>
     </div>
   );

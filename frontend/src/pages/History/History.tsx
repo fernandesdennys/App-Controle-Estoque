@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 
 import Header from "../../components/layout/Header/Header";
 import BottomNavigation from "../../components/layout/Footer/BottomNavigation";
+import Sidebar from "../../components/layout/Sidebar/Sidebar";
 
 import { getProdutos } from "../../services/productService";
 import { getMovimentacoes } from "../../services/movementService";
@@ -22,16 +23,10 @@ function History() {
         setCarregando(true);
         setErro("");
 
-        /*
-         * Primeiro buscamos os produtos.
-         */
         const produtosDados = await getProdutos();
 
         setProdutos(produtosDados);
 
-        /*
-         * Depois buscamos o histórico de cada produto.
-         */
         const resultados = await Promise.all(
           produtosDados.map(async (produto) => {
             try {
@@ -42,16 +37,8 @@ function History() {
           })
         );
 
-        /*
-         * Junta todas as movimentações
-         * em uma única lista.
-         */
         const todasMovimentacoes = resultados.flat();
 
-        /*
-         * Ordena da mais recente
-         * para a mais antiga.
-         */
         todasMovimentacoes.sort((a, b) => new Date(b.criadoEm).getTime() - new Date(a.criadoEm).getTime());
 
         setMovimentacoes(todasMovimentacoes);
@@ -69,21 +56,10 @@ function History() {
     carregarHistorico();
   }, []);
 
-  /*
-   * Encontra o produto relacionado
-   * à movimentação.
-   */
   function encontrarProduto(produtoId: number) {
     return produtos.find((produto) => produto.id === produtoId);
   }
 
-  /*
-   * Formata a data.
-   *
-   * Exemplo:
-   * hoje, 15:21
-   * ontem, 11:20
-   */
   function formatarData(data: string) {
     const dataMovimentacao = new Date(data);
     const agora = new Date();
@@ -112,17 +88,10 @@ function History() {
     return `${dataMovimentacao.toLocaleDateString("pt-BR")}, ${hora}`;
   }
 
-  /*
-   * Verifica se a movimentação representa
-   * uma entrada.
-   */
   function isEntrada(tipo: string) {
     return tipo === "ENTRADA";
   }
 
-  /*
-   * Retorna a quantidade com o sinal.
-   */
   function formatarQuantidade(movimentacao: Movimentacao) {
     const entrada = isEntrada(movimentacao.tipo);
 
@@ -131,9 +100,6 @@ function History() {
     return entrada ? `+${quantidade}` : `-${quantidade}`;
   }
 
-  /*
-   * Texto apresentado abaixo do produto.
-   */
   function textoMovimentacao(movimentacao: Movimentacao) {
     if (movimentacao.tipo === "ENTRADA") {
       return `Entrada · ${formatarData(movimentacao.criadoEm)}`;
@@ -152,7 +118,9 @@ function History() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <main className="flex-1 bg-linear-to-b from-brand-200 to-brand-100">
+      <Sidebar />
+
+      <main className="flex-1 bg-linear-to-b from-brand-100 to-brand-50 pb-24 md:ml-64 md:pb-10 md:pt-4 md:pr-4 md:pl-4">
         {/* TÍTULO */}
 
         <span className="pb-1 font-bold text-brand-900">4. Histórico</span>
@@ -161,70 +129,72 @@ function History() {
 
         <Header produtos={produtos} />
 
-        {/* CARREGANDO */}
+        <div className="mx-auto max-w-5xl md:px-8">
+          {/* CARREGANDO */}
 
-        {carregando && <p className="text-ink-500 mt-6 text-center text-sm">Carregando movimentações...</p>}
+          {carregando && <p className="text-ink-500 mt-6 text-center text-sm">Carregando movimentações...</p>}
 
-        {/* ERRO */}
+          {/* ERRO */}
 
-        {!carregando && erro && <p className="mt-6 text-center text-sm text-danger-500">{erro}</p>}
+          {!carregando && erro && <p className="mt-6 text-center text-sm text-danger-500">{erro}</p>}
 
-        {/* HISTÓRICO */}
+          {/* HISTÓRICO */}
 
-        {!carregando && !erro && (
-          <div className="px-4 pt-4 pb-24">
-            <h2 className="mb-3 text-lg font-extrabold text-ink-900">Movimentações</h2>
+          {!carregando && !erro && (
+            <div className="px-4 pt-4 pb-24 md:px-0 md:pb-10">
+              <h2 className="mb-3 text-lg font-extrabold text-ink-900">Movimentações</h2>
 
-            {movimentacoes.length === 0 ? (
-              <div className="rounded-2xl bg-white p-5 text-center shadow-sm">
-                <p className="text-ink-500 text-sm">Nenhuma movimentação registrada.</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {movimentacoes.map((movimentacao) => {
-                  const produto = encontrarProduto(movimentacao.produtoId);
+              {movimentacoes.length === 0 ? (
+                <div className="rounded-2xl bg-white p-5 text-center shadow-sm">
+                  <p className="text-ink-500 text-sm">Nenhuma movimentação registrada.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-3">
+                  {movimentacoes.map((movimentacao) => {
+                    const produto = encontrarProduto(movimentacao.produtoId);
 
-                  const entrada = isEntrada(movimentacao.tipo);
+                    const entrada = isEntrada(movimentacao.tipo);
 
-                  return (
-                    <div
-                      key={movimentacao.id}
-                      className="flex min-h-14.5 items-center rounded-2xl bg-white px-3 py-2 shadow-sm"
-                    >
-                      {/* SETA */}
-
+                    return (
                       <div
-                        className={`mr-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg font-bold ${
-                          entrada ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
-                        }`}
+                        key={movimentacao.id}
+                        className="flex min-h-14.5 items-center rounded-2xl bg-white px-3 py-2 shadow-sm"
                       >
-                        {entrada ? "↓" : "↑"}
+                        {/* SETA */}
+
+                        <div
+                          className={`mr-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg font-bold ${
+                            entrada ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
+                          }`}
+                        >
+                          {entrada ? "↓" : "↑"}
+                        </div>
+
+                        {/* INFORMAÇÕES */}
+
+                        <div className="min-w-0 flex-1">
+                          <p className="text-ink-800 truncate text-[12px] font-extrabold">
+                            {produto?.nome ?? movimentacao.produtoNome ?? `Produto #${movimentacao.produtoId}`}
+                          </p>
+
+                          <p className="mt-px text-[10px] text-ink-400">{textoMovimentacao(movimentacao)}</p>
+                        </div>
+
+                        {/* QUANTIDADE */}
+
+                        <span
+                          className={`ml-2 text-[13px] font-extrabold ${entrada ? "text-emerald-600" : "text-amber-600"}`}
+                        >
+                          {formatarQuantidade(movimentacao)}
+                        </span>
                       </div>
-
-                      {/* INFORMAÇÕES */}
-
-                      <div className="min-w-0 flex-1">
-                        <p className="text-ink-800 truncate text-[12px] font-extrabold">
-                          {produto?.nome ?? movimentacao.produtoNome ?? `Produto #${movimentacao.produtoId}`}
-                        </p>
-
-                        <p className="mt-px text-[10px] text-ink-400">{textoMovimentacao(movimentacao)}</p>
-                      </div>
-
-                      {/* QUANTIDADE */}
-
-                      <span
-                        className={`ml-2 text-[13px] font-extrabold ${entrada ? "text-emerald-600" : "text-amber-600"}`}
-                      >
-                        {formatarQuantidade(movimentacao)}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </main>
 
       <BottomNavigation />
