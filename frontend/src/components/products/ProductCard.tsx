@@ -93,9 +93,9 @@ function ProductCard({
         {/* PRODUTO */}
 
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-[14px] font-bold text-ink-900">
-            {produto.nome}
-          </h3>
+          <h3 className="line-clamp-2 text-[14px] font-bold text-ink-900 wrap-break-word">
+  {produto.nome}
+</h3>
 
           <p className="truncate text-[10px] text-ink-400">
             {nomeCategoria}

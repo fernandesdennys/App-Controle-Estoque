@@ -29,7 +29,7 @@ function ProductList({
   }
 
   return (
-    <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-3 lg:grid-cols-3">
+    <div className="mt-3 grid grid-cols-1 gap-2 lg:grid-cols-2 lg:gap-3 xl:grid-cols-3">
       {produtos.map((produto) => {
         const categoria = categorias.find((item) => item.id === produto.categoriaId);
 

@@ -21,13 +21,18 @@ function Pantry() {
   const [busca, setBusca] = useState("");
   const [carregando, setCarregando] = useState(true);
   const [salvandoId, setSalvandoId] = useState<number | null>(null);
-  const [erro, setErro] = useState("");
+
+  // Erro de carregamento inicial da página (esconde a lista)
+  const [erroCarregamento, setErroCarregamento] = useState("");
+
+  // Erro de uma ação pontual (+/-, remover) — não deve esconder a lista
+  const [erroAcao, setErroAcao] = useState("");
 
   useEffect(() => {
     async function carregarDados() {
       try {
         setCarregando(true);
-        setErro("");
+        setErroCarregamento("");
 
         const [produtosDados, categoriasDados] = await Promise.all([getProdutos(), getCategorias()]);
 
@@ -35,9 +40,9 @@ function Pantry() {
         setCategorias(categoriasDados);
       } catch (error) {
         if (error instanceof Error) {
-          setErro(error.message);
+          setErroCarregamento(error.message);
         } else {
-          setErro("Não foi possível carregar o estoque.");
+          setErroCarregamento("Não foi possível carregar o estoque.");
         }
       } finally {
         setCarregando(false);
@@ -46,6 +51,19 @@ function Pantry() {
 
     carregarDados();
   }, []);
+
+  // Some sozinho depois de alguns segundos
+  useEffect(() => {
+    if (!erroAcao) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setErroAcao("");
+    }, 4000);
+
+    return () => clearTimeout(timer);
+  }, [erroAcao]);
 
   const produtosFiltrados = useMemo(() => {
     return produtos.filter((produto) => {
@@ -67,7 +85,7 @@ function Pantry() {
     }
 
     try {
-      setErro("");
+      setErroAcao("");
       setSalvandoId(produto.id);
 
       const dados = {
@@ -91,9 +109,9 @@ function Pantry() {
       }
     } catch (error) {
       if (error instanceof Error) {
-        setErro(error.message);
+        setErroAcao(error.message);
       } else {
-        setErro("Não foi possível alterar o estoque.");
+        setErroAcao("Não foi possível alterar o estoque.");
       }
     } finally {
       setSalvandoId(null);
@@ -106,7 +124,7 @@ function Pantry() {
     }
 
     try {
-      setErro("");
+      setErroAcao("");
       setSalvandoId(produto.id);
 
       await deletarProduto(produto.id);
@@ -114,9 +132,9 @@ function Pantry() {
       setProdutos((produtosAtuais) => produtosAtuais.filter((item) => item.id !== produto.id));
     } catch (error) {
       if (error instanceof Error) {
-        setErro(error.message);
+        setErroAcao(error.message);
       } else {
-        setErro("Não foi possível remover o produto.");
+        setErroAcao("Não foi possível remover o produto.");
       }
     } finally {
       setSalvandoId(null);
@@ -141,7 +159,7 @@ function Pantry() {
     <div className="min-h-screen">
       <Sidebar />
 
-      <main className="flex-1 bg-linear-to-b from-brand-100 to-brand-50 pb-24 md:ml-64 md:pb-10 md:pt-4 md:pr-4 md:pl-4">
+      <main className="flex-1 bg-linear-to-b from-brand-100 to-brand-50 pb-24 md:ml-64 md:pt-4 md:pr-4 md:pb-10 md:pl-4">
         <span className="pb-1 font-bold text-brand-900">2. Estoque</span>
 
         <Header produtos={produtos} />
@@ -199,22 +217,41 @@ function Pantry() {
           </div>
 
           {/* =====================================================
+              AVISO DE ERRO DE AÇÃO (não esconde a lista)
+          ====================================================== */}
+
+          {erroAcao && (
+            <div className="mx-3 mb-3 flex items-center justify-between rounded-xl bg-danger-100 px-4 py-2 text-sm text-danger-500 md:mx-0">
+              <span>{erroAcao}</span>
+
+              <button
+                type="button"
+                onClick={() => setErroAcao("")}
+                className="ml-3 shrink-0 cursor-pointer font-bold"
+                aria-label="Fechar aviso"
+              >
+                ×
+              </button>
+            </div>
+          )}
+
+          {/* =====================================================
               CARREGANDO
           ====================================================== */}
 
           {carregando && <p className="text-ink-500 mt-4 text-center text-sm">Carregando produtos...</p>}
 
           {/* =====================================================
-              ERRO
+              ERRO DE CARREGAMENTO
           ====================================================== */}
 
-          {erro && <p className="mt-4 text-center text-sm text-red-600">{erro}</p>}
+          {erroCarregamento && <p className="mt-4 text-center text-sm text-red-600">{erroCarregamento}</p>}
 
           {/* =====================================================
               LISTA
           ====================================================== */}
 
-          {!carregando && !erro && (
+          {!carregando && !erroCarregamento && (
             <ProductList
               produtos={produtosFiltrados}
               categorias={categorias}
