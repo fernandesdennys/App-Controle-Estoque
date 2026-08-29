@@ -13,6 +13,7 @@ Projeto desenvolvido em dupla:
 
 ## ✨ Funcionalidades
 
+- 🔐 **Autenticação** — tela de login com validação de formulário (Zod) e integração via token JWT
 - 🏠 **Dashboard** com visão geral do estoque e produtos que precisam de atenção
 - 📦 **Controle de estoque** — cadastro de produtos, categorias, quantidade atual, ideal e mínima
 - 🔍 **Busca e filtro** por categoria
@@ -36,6 +37,7 @@ Projeto desenvolvido em dupla:
 - [Spring Boot 4.1](https://spring.io/projects/spring-boot)
 - Spring Data JPA
 - Spring Validation
+- Spring Security + JWT (autenticação)
 - [MapStruct](https://mapstruct.org/)
 - [H2 Database](https://www.h2database.com/)
 
@@ -45,6 +47,17 @@ Projeto desenvolvido em dupla:
 ```bash
 cd frontend
 npm install
+```
+
+Crie um arquivo `.env` na pasta `frontend` com a URL do back-end:
+
+```dotenv
+VITE_API_URL=http://localhost:8080
+```
+
+Depois rode:
+
+```bash
 npm run dev
 ```
 
