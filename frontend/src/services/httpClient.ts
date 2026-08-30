@@ -26,7 +26,7 @@ httpClient.interceptors.response.use(
   (res) => res,
 
   (error) => {
-    const mensagem = error.response?.data?.detail ?? "Não foi possível concluir a operação.";
+    const mensagem = error.response?.data?.message ?? "Não foi possível concluir a operação.";
 
     return Promise.reject(new Error(mensagem));
   }
