@@ -1,13 +1,15 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { httpClient } from "../../services/httpClient";
 import { validateLogin, type LoginData } from "../../schemas/authSchema";
+import { useAuth } from "../../context/AuthContext";
 import React from "react";
 
 type FormErrors = Partial<Record<keyof LoginData, string[]>>;
 
 export default function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
@@ -32,19 +34,24 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const response = await axios.post("/api/login", resultado.data);
-      console.log("Login efetuado:", response.data);
+      const response = await httpClient.post("/login", resultado.data);
+      const { token, nome, sobrenome, email: emailUsuario } = response.data;
+
+      login(token);
+      localStorage.setItem("usuario", JSON.stringify({ nome, sobrenome, email: emailUsuario }));
+
       navigate("/dashboard");
     } catch (error) {
-      setApiError("E-mail ou senha inválidos. Tente novamente.");
+      const mensagem = error instanceof Error ? error.message : "E-mail ou senha inválidos.";
+      setApiError(mensagem);
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-linear-to-b from-brand-100 to-brand-50 p-6 font-sans">
-      <div className="w-full max-w-95 rounded-3xl  shadow-brand-800 bg-surface-card px-9 pt-10 pb-8 shadow-[0_4px_24px_rgba(22,26,43,0.06)]">
+    <div className="flex min-h-screen items-center justify-center bg-surface-bg p-6 font-sans">
+      <div className="w-full max-w-95 rounded-3xl border-2 border-brand-700 bg-surface-card px-9 pt-10 pb-8 shadow-[0_4px_24px_rgba(22,26,43,0.06)] shadow-brand-700">
         {/* logo */}
         <div className="mb-5 flex justify-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-linear-to-br from-brand-500 to-brand-700 shadow-[0_4px_14px_rgba(90,58,184,0.35)]">

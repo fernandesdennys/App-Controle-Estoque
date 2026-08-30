@@ -26,11 +26,8 @@ function Dashboard() {
   // ============================================================
 
   const dataAtual = new Date();
-
   const dias = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-
   const meses = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
-
   const dataFormatada = `${dias[dataAtual.getDay()]}, ${dataAtual.getDate()} ${meses[dataAtual.getMonth()]}`;
 
   // ============================================================
@@ -233,7 +230,10 @@ function Dashboard() {
     <div id="dashboard" className="flex min-h-screen flex-col">
       <Sidebar />
 
-      <main id="dashboard-main" className="flex-1 bg-linear-to-b from-brand-100 to-brand-50 pb-24 md:ml-64 md:pb-10 md:pt-4 md:pr-4 md:pl-4">
+      <main
+        id="dashboard-main"
+        className="flex-1 bg-linear-to-b from-brand-100 to-brand-50 pb-24 md:ml-64 md:pt-4 md:pr-4 md:pb-10 md:pl-4"
+      >
         <span id="dashboard-breadcrumb" className="pb-1 font-bold text-brand-900">
           1. Início
         </span>

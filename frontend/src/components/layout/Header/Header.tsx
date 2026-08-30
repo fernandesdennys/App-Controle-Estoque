@@ -1,7 +1,9 @@
 import React from "react";
-import { FiHome } from "react-icons/fi";
+import { FiHome, FiLogOut } from "react-icons/fi";
 import { FaPlus } from "react-icons/fa";
 import type { Produto } from "../../../types/product";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../context/AuthContext";
 
 interface HeaderProps {
   produtos: Produto[];
@@ -18,6 +20,14 @@ interface Usuario {
 }
 
 function Header({ produtos, mostrarBotaoAdicionar = false, onAdicionar, saudacao, data }: HeaderProps) {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  function handleLogout() {
+    logout();
+    navigate("/");
+  }
+
   const totalProdutos = produtos.length;
 
   const estoqueBaixo = produtos.filter(
@@ -72,7 +82,7 @@ function Header({ produtos, mostrarBotaoAdicionar = false, onAdicionar, saudacao
                 AÇÕES DO HEADER
             ====================================================== */}
 
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
               {mostrarBotaoAdicionar && (
                 <button
                   type="button"
@@ -92,6 +102,16 @@ function Header({ produtos, mostrarBotaoAdicionar = false, onAdicionar, saudacao
                   {iniciais || "?"}
                 </span>
               </div>
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                title="Sair"
+                aria-label="Sair"
+                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-[9px] text-brand-200 transition hover:bg-brand-800 hover:text-white"
+              >
+                <FiLogOut className="h-5 w-5" />
+              </button>
             </div>
           </div>
 
