@@ -24,26 +24,32 @@ Projeto desenvolvido em dupla:
 ## 🛠️ Tecnologias
 
 ### Front-end
-- [React 19](https://react.dev/)
+
+- [React 19.2](https://react.dev/)
 - [TypeScript](https://www.typescriptlang.org/)
-- [Vite](https://vite.dev/)
-- [Tailwind CSS 4](https://tailwindcss.com/)
-- [React Router](https://reactrouter.com/)
+- [Vite 8](https://vite.dev/)
+- [Tailwind CSS 4.3](https://tailwindcss.com/)
+- [React Router 7.18](https://reactrouter.com/)
 - [Axios](https://axios-http.com/)
 - [Zod](https://zod.dev/)
+- [React Icons](https://react-icons.github.io/react-icons/)
 
 ### Back-end
+
 - [Java 25](https://openjdk.org/)
 - [Spring Boot 4.1](https://spring.io/projects/spring-boot)
+- Spring Web MVC
 - Spring Data JPA
 - Spring Validation
-- Spring Security + JWT (autenticação)
-- [MapStruct](https://mapstruct.org/)
-- [H2 Database](https://www.h2database.com/)
+- Spring Security + JWT ([jjwt](https://github.com/jwtk/jjwt)) — autenticação
+- [MapStruct](https://mapstruct.org/) — mapeamento de DTOs
+- [H2 Database](https://www.h2database.com/) + H2 Console — banco em memória para desenvolvimento
+- [spring-dotenv](https://github.com/paulschwarz/spring-dotenv) — variáveis de ambiente via `.env`
 
 ## 🚀 Como executar
 
 ### Front-end
+
 ```bash
 cd frontend
 npm install
@@ -62,10 +68,15 @@ npm run dev
 ```
 
 ### Back-end
+
+Crie um arquivo `.env` na pasta `backend` com as variáveis necessárias (ex.: credenciais do banco e segredo do JWT), e então rode:
+
 ```bash
 cd backend
 ./mvnw spring-boot:run
 ```
+
+O console do H2 fica disponível, por padrão, em `http://localhost:8080/h2-console`.
 
 ## 📄 Licença
 
