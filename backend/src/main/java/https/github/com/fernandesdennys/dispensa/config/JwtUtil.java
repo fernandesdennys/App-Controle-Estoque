@@ -11,12 +11,9 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    // Defina em application.properties:
-    // jwt.secret=uma-chave-bem-grande-e-secreta-aqui-com-32-caracteres-ou-mais
     @Value("${jwt.secret}")
     private String secret;
 
-    // Tempo de expiração do token, em milissegundos (aqui: 24h)
     private static final long EXPIRATION_MS = 24 * 60 * 60 * 1000;
 
     private SecretKey getChave() {
@@ -52,5 +49,4 @@ public class JwtUtil {
             return false;
         }
     }
-
 }

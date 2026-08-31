@@ -1,5 +1,6 @@
 package https.github.com.fernandesdennys.dispensa.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -14,6 +15,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -22,12 +24,15 @@ public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
 
+    // Lista separada por vírgula, vinda de variável de ambiente.
+    // Fallback cobre só o dev local — em produção defina CORS_ALLOWED_ORIGINS.
+    @Value("${cors.allowed-origins:http://localhost:5173}")
+    private String allowedOrigins;
+
     public SecurityConfig(JwtAuthFilter jwtAuthFilter) {
         this.jwtAuthFilter = jwtAuthFilter;
     }
 
-    // Usado para transformar a senha digitada em hash (e comparar no login).
-    // NUNCA armazene senha em texto puro no banco.
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -37,29 +42,16 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
-                // Habilita CORS
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
-                // API sem sessão de servidor
                 .csrf(csrf -> csrf.disable())
-
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-
                 .authorizeHttpRequests(auth -> auth
-
-                        // Permite o preflight do navegador
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                        // Login é público
                         .requestMatchers("/login", "/register").permitAll()
-
-                        // Todo o restante exige JWT
                         .anyRequest().authenticated()
                 )
-
-                // JWT antes do filtro padrão de autenticação
                 .addFilterBefore(
                         jwtAuthFilter,
                         UsernamePasswordAuthenticationFilter.class
@@ -73,29 +65,20 @@ public class SecurityConfig {
 
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Frontend React/Vite
+        // Agora aceita múltiplas origens: dev (localhost:5173) + produção,
+        // configuráveis via env var CORS_ALLOWED_ORIGINS (separadas por vírgula)
         configuration.setAllowedOrigins(
-                List.of("http://localhost:5173")
+                Arrays.asList(allowedOrigins.split(","))
         );
 
-        // Métodos permitidos
         configuration.setAllowedMethods(
-                List.of(
-                        "GET",
-                        "POST",
-                        "PUT",
-                        "DELETE",
-                        "PATCH",
-                        "OPTIONS"
-                )
+                List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
         );
 
-        // Headers permitidos
         configuration.setAllowedHeaders(
                 List.of("*")
         );
 
-        // Permite envio de credenciais
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source =
