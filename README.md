@@ -13,7 +13,7 @@ Projeto desenvolvido em dupla:
 
 ## ✨ Funcionalidades
 
-- 🔐 **Autenticação** — tela de login com validação de formulário (Zod) e integração via token JWT
+- 🔐 **Autenticação** — login e cadastro com validação de formulário (Zod) e integração via token JWT
 - 🏠 **Dashboard** com visão geral do estoque e produtos que precisam de atenção
 - 📦 **Controle de estoque** — cadastro de produtos, categorias, quantidade atual, ideal e mínima
 - 🔍 **Busca e filtro** por categoria
