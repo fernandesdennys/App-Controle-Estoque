@@ -1,187 +1,67 @@
 package https.github.com.fernandesdennys.dispensa.exception;
 
-import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    @ExceptionHandler(EstoqueInsuficienteException.class)
-    public ResponseEntity<CustomError> business(EstoqueInsuficienteException e, HttpServletRequest request) {
-        HttpStatus status = HttpStatus.UNPROCESSABLE_CONTENT;
-        CustomError error = new CustomError(
-                Instant.now(),
-                status.value(),
-                e.getMessage(),
-                request.getRequestURI()
-        );
-        return ResponseEntity.status(status).body(error);
-    }
-
-    // ENUM throw
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<CustomError> httpMessageNotReadable(
-            HttpMessageNotReadableException e,
-            HttpServletRequest request
-    ) {
-        HttpStatus status = HttpStatus.BAD_REQUEST;
-        String mensagem = extrairMensagemLimpa(e);
-        CustomError err = new CustomError(
-                Instant.now(),
-                status.value(),
-                mensagem,
-                request.getRequestURI()
-        );
-        return ResponseEntity.status(status).body(err);
-    }
-
-    private String extrairMensagemLimpa(Throwable e) {
-        Throwable causaRaiz = e;
-
-        while (causaRaiz.getCause() != null) {
-            causaRaiz = causaRaiz.getCause();
-        }
-
-        return causaRaiz.getMessage();
-    }
-
-    @ExceptionHandler(ForbiddenException.class)
-    public ResponseEntity<CustomError> forbidden(
-            ForbiddenException e,
-            HttpServletRequest request
-    ) {
-        HttpStatus status = HttpStatus.FORBIDDEN;
-        CustomError err = new CustomError(
-                Instant.now(),
-                status.value(),
-                e.getMessage(),
-                request.getRequestURI()
-        );
-        return ResponseEntity.status(status).body(err);
-    }
-
-    // Credenciais inválidas
+    // Login/senha errados -> 401
     @ExceptionHandler(InvalidCredentialsException.class)
-    public ResponseEntity<CustomError> invalidCredentials(
-            InvalidCredentialsException e,
-            HttpServletRequest request
-    ) {
-        HttpStatus status = HttpStatus.UNAUTHORIZED;
+    public ResponseEntity<ErrorResponse> handleInvalidCredentials(InvalidCredentialsException ex) {
+        logger.warn("Tentativa de login inválida: {}", ex.getMessage());
 
-        CustomError error = new CustomError(
-                Instant.now(),
-                status.value(),
-                e.getMessage(),
-                request.getRequestURI()
-        );
-
-        return ResponseEntity.status(status).body(error);
+        ErrorResponse erro = new ErrorResponse(ex.getMessage(), HttpStatus.UNAUTHORIZED.value());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(erro);
     }
 
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<CustomError> resourceNotFound(
-            ResourceNotFoundException e,
-            HttpServletRequest request
-    ) {
-        HttpStatus status = HttpStatus.NOT_FOUND;
-        CustomError error = new CustomError(
-                Instant.now(),
-                status.value(),
-                e.getMessage(),
-                request.getRequestURI()
-        );
-        return ResponseEntity.status(status).body(error);
+    // E-mail já cadastrado -> 409
+    @ExceptionHandler(EmailJaCadastradoException.class)
+    public ResponseEntity<ErrorResponse> handleEmailDuplicado(EmailJaCadastradoException ex) {
+        logger.warn("Tentativa de cadastro com e-mail duplicado: {}", ex.getMessage());
+
+        ErrorResponse erro = new ErrorResponse(ex.getMessage(), HttpStatus.CONFLICT.value());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(erro);
     }
 
-    @ExceptionHandler(ListaVaziaException.class)
-    public ResponseEntity<CustomError> listaVazia(
-            ListaVaziaException e,
-            HttpServletRequest request
-    ) {
-        HttpStatus status = HttpStatus.UNPROCESSABLE_CONTENT;
-        CustomError err = new CustomError(
-                Instant.now(),
-                status.value(),
-                e.getMessage(),
-                request.getRequestURI()
-        );
-        return ResponseEntity.status(status).body(err);
-    }
-
-    @ExceptionHandler(ListaJaFinalizadaException.class)
-    public ResponseEntity<CustomError> listaJaFinalizada(
-            ListaJaFinalizadaException e,
-            HttpServletRequest request
-    ) {
-        HttpStatus status = HttpStatus.CONFLICT;
-        CustomError err = new CustomError(
-                Instant.now(),
-                status.value(),
-                e.getMessage(),
-                request.getRequestURI()
-        );
-        return ResponseEntity.status(status).body(err);
-    }
-
+    // Erros de validação do @Valid (ex: e-mail em formato errado, senha curta) -> 400
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ValidationError> methodArgumentNotValid(
-            MethodArgumentNotValidException e,
-            HttpServletRequest request
-    ) {
-        HttpStatus status = HttpStatus.UNPROCESSABLE_CONTENT;
+    public ResponseEntity<Map<String, Object>> handleValidationErrors(MethodArgumentNotValidException ex) {
+        Map<String, String> campos = new HashMap<>();
 
-        ValidationError error = new ValidationError(
-                Instant.now(),
-                status.value(),
-                "Erro de Validação",
-                request.getRequestURI()
-        );
-
-        for (FieldError f : e.getBindingResult().getFieldErrors()) {
-            error.addError(f.getField(), f.getDefaultMessage());
+        for (FieldError erro : ex.getBindingResult().getFieldErrors()) {
+            campos.put(erro.getField(), erro.getDefaultMessage());
         }
 
-        return ResponseEntity.status(status).body(error);
+        Map<String, Object> resposta = new HashMap<>();
+        resposta.put("detail", "Dados inválidos");
+        resposta.put("status", HttpStatus.BAD_REQUEST.value());
+        resposta.put("errors", campos);
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(resposta);
     }
 
-    @ExceptionHandler(DatabaseException.class)
-    public ResponseEntity<CustomError> database(
-            DatabaseException e,
-            HttpServletRequest request
-    ) {
-        HttpStatus status = HttpStatus.CONFLICT;
-        CustomError err = new CustomError(
-                Instant.now(),
-                status.value(),
-                e.getMessage(),
-                request.getRequestURI()
-        );
-        return ResponseEntity.status(status).body(err);
-    }
-
+    // Qualquer outra exceção não tratada (SQL, NullPointer, JPA, etc.)
+    // Nunca deixa o stacktrace/mensagem interna vazar pro cliente.
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<CustomError> generic(
-            Exception e,
-            HttpServletRequest request
-    ) {
-        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+    public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
+        logger.error("Erro não tratado", ex); // detalhe completo só no log do servidor
 
-        CustomError error = new CustomError(
-                Instant.now(),
-                status.value(),
-                "Erro inesperado",
-                request.getRequestURI()
+        ErrorResponse erro = new ErrorResponse(
+                "Erro interno. Tente novamente mais tarde.",
+                HttpStatus.INTERNAL_SERVER_ERROR.value()
         );
-
-        return ResponseEntity.status(status).body(error);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(erro);
     }
 }

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { httpClient } from "../../services/httpClient";
 import { validateLogin, type LoginData } from "../../schemas/authSchema";
 import { useAuth } from "../../context/AuthContext";
@@ -167,9 +167,9 @@ export default function Login() {
 
         <p className="mt-6 text-center text-xs text-ink-600">
           Não tem uma conta?{" "}
-          <a href="#" className="font-semibold text-brand-600 hover:text-brand-700 hover:underline">
-            Fale com o administrador
-          </a>
+          <Link to="/register" className="font-semibold text-brand-600 hover:text-brand-700 hover:underline">
+            Fazer cadastro
+          </Link>
         </p>
       </div>
     </div>
