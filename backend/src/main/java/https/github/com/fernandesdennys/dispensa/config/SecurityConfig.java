@@ -25,6 +25,8 @@ public class SecurityConfig {
     private final JwtAuthFilter jwtAuthFilter;
 
     // Lista separada por vírgula, vinda de variável de ambiente.
+    // Aceita wildcard (*) em qualquer parte do domínio/subdomínio,
+    // útil para cobrir as URLs de preview do Vercel, que mudam a cada deploy.
     // Fallback cobre só o dev local — em produção defina CORS_ALLOWED_ORIGINS.
     @Value("${cors.allowed-origins:http://localhost:5173}")
     private String allowedOrigins;
@@ -65,9 +67,10 @@ public class SecurityConfig {
 
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Agora aceita múltiplas origens: dev (localhost:5173) + produção,
-        // configuráveis via env var CORS_ALLOWED_ORIGINS (separadas por vírgula)
-        configuration.setAllowedOrigins(
+        // Agora aceita múltiplas origens (com suporte a wildcard "*"),
+        // configuráveis via env var CORS_ALLOWED_ORIGINS (separadas por vírgula).
+        // Ex: https://app.vercel.app,https://app-*-meu-usuario.vercel.app
+        configuration.setAllowedOriginPatterns(
                 Arrays.asList(allowedOrigins.split(","))
         );
 
