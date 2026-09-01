@@ -59,7 +59,7 @@ public interface ProdutoRepository
             AND (
                 :busca IS NULL
                 OR LOWER(p.nome) LIKE
-                   LOWER(CONCAT('%', :busca, '%'))
+                   LOWER(CONCAT('%', CAST(:busca AS string), '%'))
             )
 
             ORDER BY
