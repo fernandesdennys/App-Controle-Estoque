@@ -21,12 +21,7 @@ public interface MovimentacaoRepository
             FROM Movimentacao m
             JOIN FETCH m.produto p
             WHERE p.id = :produtoId
-
-            AND (
-                :tipo IS NULL
-                OR m.tipo = :tipo
-            )
-
+            AND m.tipo = COALESCE(:tipo, m.tipo)
             ORDER BY m.criadoEm DESC
             """)
     Page<Movimentacao> buscarPorProduto(
@@ -46,12 +41,7 @@ public interface MovimentacaoRepository
             SELECT m
             FROM Movimentacao m
             JOIN FETCH m.produto p
-
-            WHERE (
-                :tipo IS NULL
-                OR m.tipo = :tipo
-            )
-
+            WHERE m.tipo = COALESCE(:tipo, m.tipo)
             ORDER BY m.criadoEm DESC
             """)
     Page<Movimentacao> buscarHistoricoGeral(
